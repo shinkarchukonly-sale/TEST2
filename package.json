@@ -1,0 +1,9 @@
+{
+  "name": "ganttpro-proxy",
+  "version": "1.0.0",
+  "description": "Proxy for GanttPro API",
+  "scripts": {
+    "start": "node api/ganttpro.js"
+  },
+  "dependencies": {}
+}
