@@ -990,7 +990,43 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-    </style>
+    
+        /* Drag & Drop */
+        .drag-handle {
+            cursor: grab;
+            color: #CBD5E1;
+            padding: 0 6px;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .drag-handle:active { cursor: grabbing; }
+        .drag-handle:hover { color: #94A3B8; }
+
+        tr.dragging, .admin-block-row.dragging {
+            opacity: 0.4;
+        }
+        tr.drag-over td, .admin-block-row.drag-over {
+            border-top: 2px solid #3B82F6 !important;
+        }
+        .admin-block-row {
+            display: contents;
+        }
+        /* Drop zone between categories in admin */
+        .category-drop-zone {
+            height: 4px;
+            background: transparent;
+            transition: all 0.15s;
+            margin: 2px 0;
+        }
+        .category-drop-zone.drag-over {
+            height: 28px;
+            background: #DBEAFE;
+            border: 2px dashed #3B82F6;
+            border-radius: 6px;
+        }
+
+        </style>
 </head>
 <body>
     <div class="app-container">
@@ -1840,10 +1876,23 @@
                                             const badgeClass = block.difficulty === 'easy' ? 'badge-easy' : block.difficulty === 'medium' ? 'badge-medium' : 'badge-hard';
                                             const badgeText = block.difficulty === 'easy' ? 'Легкий' : block.difficulty === 'medium' ? 'Средний' : 'Сложный';
                                             return `
-                                                <tr>
+                                                <tr draggable="true"
+                                                    data-page-id="${page.id}"
+                                                    data-block-id="${block.id}"
+                                                    ondragstart="onPageBlockDragStart(event)"
+                                                    ondragover="onPageBlockDragOver(event)"
+                                                    ondrop="onPageBlockDrop(event)"
+                                                    ondragend="onPageBlockDragEnd(event)">
                                                     <td>
-                                                        <div>${block.name}</div>
-                                                        <span class="badge ${badgeClass}">${badgeText}</span>
+                                                        <div style="display:flex;align-items:center;gap:6px;">
+                                                            <span class="drag-handle" title="Перетащить">
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+                                                            </span>
+                                                            <div>
+                                                                <div>${block.name}</div>
+                                                                <span class="badge ${badgeClass}">${badgeText}</span>
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                     <td class="text-right">${block.analytics.toFixed(0)}</td>
                                                     <td class="text-right">${block.design.toFixed(0)}</td>
@@ -3489,8 +3538,17 @@
                                 ${blocks[difficulty].map((block, index) => {
                                     const total = block.analytics + block.design + block.frontend + block.backend + block.test;
                                     return `
-                                        <tr>
-                                            <td>
+                                        <tr draggable="true"
+                                            data-difficulty="${difficulty}"
+                                            data-index="${index}"
+                                            ondragstart="onAdminBlockDragStart(event)"
+                                            ondragover="onAdminBlockDragOver(event)"
+                                            ondrop="onAdminBlockDrop(event)"
+                                            ondragend="onAdminBlockDragEnd(event)">
+                                            <td style="display:flex;align-items:center;gap:4px;">
+                                                <span class="drag-handle" title="Перетащить">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+                                                </span>
                                                 <button class="delete-block-btn" onclick="deleteAdminBlock('${difficulty}', ${index})" title="Удалить блок">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                                 </button>
@@ -3510,6 +3568,13 @@
                                 }).join('')}
                             </tbody>
                         </table>
+                        <div class="category-drop-zone"
+                            data-difficulty="${difficulty}"
+                            ondragover="onCategoryZoneDragOver(event)"
+                            ondrop="onCategoryZoneDrop(event)"
+                            ondragleave="onCategoryZoneDragLeave(event)"
+                            title="Перетащить сюда чтобы добавить в конец категории">
+                        </div>
                         <div class="admin-add-block">
                             <input type="text" id="newBlockName-${difficulty}" placeholder="Название нового блока...">
                             <button class="btn btn-secondary" onclick="addNewBlock('${difficulty}')">
@@ -4046,6 +4111,137 @@
         } else {
             init();
         }
+
+        // ═══════════════════════════════════════════════
+        // DRAG & DROP — главная страница (блоки внутри страницы)
+        // ═══════════════════════════════════════════════
+        let _pageDrag = { pageId: null, blockId: null };
+
+        function onPageBlockDragStart(e) {
+            const tr = e.currentTarget;
+            _pageDrag.pageId = parseInt(tr.dataset.pageId);
+            _pageDrag.blockId = parseInt(tr.dataset.blockId);
+            tr.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function onPageBlockDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const tr = e.currentTarget;
+            // Remove drag-over from siblings
+            tr.closest('tbody').querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+            tr.classList.add('drag-over');
+        }
+
+        function onPageBlockDrop(e) {
+            e.preventDefault();
+            const tr = e.currentTarget;
+            const targetPageId = parseInt(tr.dataset.pageId);
+            const targetBlockId = parseInt(tr.dataset.blockId);
+
+            if (_pageDrag.pageId !== targetPageId) return; // only within same page
+            if (_pageDrag.blockId === targetBlockId) return;
+
+            const page = state.pages.find(p => p.id === _pageDrag.pageId);
+            if (!page) return;
+
+            const fromIdx = page.blocks.findIndex(b => b.id === _pageDrag.blockId);
+            const toIdx   = page.blocks.findIndex(b => b.id === targetBlockId);
+            if (fromIdx === -1 || toIdx === -1) return;
+
+            const [moved] = page.blocks.splice(fromIdx, 1);
+            page.blocks.splice(toIdx, 0, moved);
+
+            renderPages();
+            calculateTotals();
+            saveState();
+        }
+
+        function onPageBlockDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            document.querySelectorAll('tr.drag-over').forEach(r => r.classList.remove('drag-over'));
+            _pageDrag = { pageId: null, blockId: null };
+        }
+
+
+        // ═══════════════════════════════════════════════
+        // DRAG & DROP — админка блоков (внутри и между категориями)
+        // ═══════════════════════════════════════════════
+        let _adminDrag = { difficulty: null, index: null };
+
+        function onAdminBlockDragStart(e) {
+            const tr = e.currentTarget;
+            _adminDrag.difficulty = tr.dataset.difficulty;
+            _adminDrag.index = parseInt(tr.dataset.index);
+            tr.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function onAdminBlockDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const tr = e.currentTarget;
+            document.querySelectorAll('#adminPanelContent tr.drag-over').forEach(r => r.classList.remove('drag-over'));
+            // Also clear category drop zones
+            document.querySelectorAll('.category-drop-zone.drag-over').forEach(z => z.classList.remove('drag-over'));
+            tr.classList.add('drag-over');
+        }
+
+        function onAdminBlockDrop(e) {
+            e.preventDefault();
+            const tr = e.currentTarget;
+            const targetDiff  = tr.dataset.difficulty;
+            const targetIndex = parseInt(tr.dataset.index);
+
+            if (_adminDrag.difficulty === null) return;
+
+            // Remove from source
+            const [moved] = blocks[_adminDrag.difficulty].splice(_adminDrag.index, 1);
+
+            // Insert into target (after adjusting index if same array)
+            let insertAt = targetIndex;
+            if (_adminDrag.difficulty === targetDiff && _adminDrag.index < targetIndex) {
+                insertAt = targetIndex; // already spliced, so index shifted
+            }
+            blocks[targetDiff].splice(insertAt, 0, moved);
+
+            renderAdminPanel();
+        }
+
+        function onAdminBlockDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            document.querySelectorAll('#adminPanelContent tr.drag-over').forEach(r => r.classList.remove('drag-over'));
+            document.querySelectorAll('.category-drop-zone.drag-over').forEach(z => z.classList.remove('drag-over'));
+            _adminDrag = { difficulty: null, index: null };
+        }
+
+        // Drop zone between categories (drop at end of a category)
+        function onCategoryZoneDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            document.querySelectorAll('.category-drop-zone.drag-over').forEach(z => z.classList.remove('drag-over'));
+            document.querySelectorAll('#adminPanelContent tr.drag-over').forEach(r => r.classList.remove('drag-over'));
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function onCategoryZoneDrop(e) {
+            e.preventDefault();
+            const zone = e.currentTarget;
+            const targetDiff = zone.dataset.difficulty;
+
+            if (_adminDrag.difficulty === null) return;
+
+            const [moved] = blocks[_adminDrag.difficulty].splice(_adminDrag.index, 1);
+            blocks[targetDiff].push(moved);
+
+            renderAdminPanel();
+        }
+
+        function onCategoryZoneDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
     </script>
 </body>
 </html>
