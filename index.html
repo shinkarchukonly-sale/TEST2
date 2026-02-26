@@ -3557,11 +3557,11 @@
                                                 <input type="text" value="${block.name}" style="width: 100%; min-width: 200px;" 
                                                     onchange="updateBlockName('${difficulty}', ${index}, this.value)">
                                             </td>
-                                            <td><input type="number" step="0.1" value="${block.analytics}" onchange="updateBlockValue('${difficulty}', ${index}, 'analytics', this.value)"></td>
-                                            <td><input type="number" step="0.1" value="${block.design}" onchange="updateBlockValue('${difficulty}', ${index}, 'design', this.value)"></td>
-                                            <td><input type="number" step="0.1" value="${block.frontend}" onchange="updateBlockValue('${difficulty}', ${index}, 'frontend', this.value)"></td>
-                                            <td><input type="number" step="0.1" value="${block.backend}" onchange="updateBlockValue('${difficulty}', ${index}, 'backend', this.value)"></td>
-                                            <td><input type="number" step="0.1" value="${block.test}" onchange="updateBlockValue('${difficulty}', ${index}, 'test', this.value)"></td>
+                                            <td><input type="number" step="1" value="${block.analytics}" onchange="updateBlockValue('${difficulty}', ${index}, 'analytics', this.value)"></td>
+                                            <td><input type="number" step="1" value="${block.design}" onchange="updateBlockValue('${difficulty}', ${index}, 'design', this.value)"></td>
+                                            <td><input type="number" step="1" value="${block.frontend}" onchange="updateBlockValue('${difficulty}', ${index}, 'frontend', this.value)"></td>
+                                            <td><input type="number" step="1" value="${block.backend}" onchange="updateBlockValue('${difficulty}', ${index}, 'backend', this.value)"></td>
+                                            <td><input type="number" step="1" value="${block.test}" onchange="updateBlockValue('${difficulty}', ${index}, 'test', this.value)"></td>
                                             <td class="total-cell" id="total-${difficulty}-${index}">${total.toFixed(0)}</td>
                                         </tr>
                                     `;
@@ -3888,11 +3888,11 @@
                                 </button>
                             </td>
                             <td class="block-name">${integrationNames[key]}</td>
-                            <td><input type="number" step="0.1" value="${intg.analytics}" onchange="updateIntegrationValue('${key}', 'analytics', this.value)"></td>
-                            <td><input type="number" step="0.1" value="${intg.design}" onchange="updateIntegrationValue('${key}', 'design', this.value)"></td>
-                            <td><input type="number" step="0.1" value="${intg.frontend}" onchange="updateIntegrationValue('${key}', 'frontend', this.value)"></td>
-                            <td><input type="number" step="0.1" value="${intg.backend}" onchange="updateIntegrationValue('${key}', 'backend', this.value)"></td>
-                            <td><input type="number" step="0.1" value="${intg.test}" onchange="updateIntegrationValue('${key}', 'test', this.value)"></td>
+                            <td><input type="number" step="1" value="${intg.analytics}" onchange="updateIntegrationValue('${key}', 'analytics', this.value)"></td>
+                            <td><input type="number" step="1" value="${intg.design}" onchange="updateIntegrationValue('${key}', 'design', this.value)"></td>
+                            <td><input type="number" step="1" value="${intg.frontend}" onchange="updateIntegrationValue('${key}', 'frontend', this.value)"></td>
+                            <td><input type="number" step="1" value="${intg.backend}" onchange="updateIntegrationValue('${key}', 'backend', this.value)"></td>
+                            <td><input type="number" step="1" value="${intg.test}" onchange="updateIntegrationValue('${key}', 'test', this.value)"></td>
                         </tr>
                     `;
                 }
