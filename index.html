@@ -1488,6 +1488,11 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                     Сохранить изменения
                 </button>
+                <label class="btn btn-secondary" style="cursor:pointer;" title="Импортировать блоки из Excel (формат: категория-разделитель, колонки: название, аналитика, дизайн, frontend, backend, test)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Импорт Excel
+                    <input type="file" accept=".xlsx,.xls" style="display:none;" onchange="importBlocksFromExcel(this)">
+                </label>
                 <button class="btn btn-secondary" onclick="resetBlocksData()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
                     Сбросить к исходным
@@ -4110,6 +4115,81 @@
             document.addEventListener('DOMContentLoaded', init);
         } else {
             init();
+        }
+
+        // ═══════════════════════════════════════════════
+        // ИМПОРТ БЛОКОВ ИЗ EXCEL
+        // ═══════════════════════════════════════════════
+        function importBlocksFromExcel(input) {
+            const file = input.files[0];
+            if (!file) return;
+            input.value = '';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const wb = XLSX.read(data, { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+
+                    const imported = { easy: [], medium: [], hard: [] };
+                    const diffMap = {
+                        'легкие': 'easy', 'легкий': 'easy', 'easy': 'easy',
+                        'средние': 'medium', 'средний': 'medium', 'medium': 'medium',
+                        'сложные': 'hard', 'сложный': 'hard', 'hard': 'hard'
+                    };
+
+                    let currentDiff = null;
+
+                    for (const row of rows) {
+                        const col1 = row[1] ? String(row[1]).trim().toLowerCase().replace(/\s+/g, '') : null;
+                        const normalized = col1 ? col1.replace(/ё/g, 'е') : null;
+                        const isHeader = normalized && diffMap[normalized] && row[2] == null && row[3] == null;
+
+                        if (isHeader) {
+                            currentDiff = diffMap[normalized];
+                            continue;
+                        }
+
+                        if (!currentDiff) continue;
+
+                        const name = row[1] ? String(row[1]).trim() : null;
+                        if (!name) continue;
+
+                        imported[currentDiff].push({
+                            name,
+                            analytics: parseFloat(row[2]) || 0,
+                            design:    parseFloat(row[3]) || 0,
+                            frontend:  parseFloat(row[4]) || 0,
+                            backend:   parseFloat(row[5]) || 0,
+                            test:      parseFloat(row[6]) || 0
+                        });
+                    }
+
+                    const total = imported.easy.length + imported.medium.length + imported.hard.length;
+                    if (total === 0) {
+                        showError('Не удалось распознать блоки в файле.', 'Убедитесь что формат совпадает с шаблоном.');
+                        return;
+                    }
+
+                    const msg = 'Импортировать ' + total + ' блоков?\n' +
+                        '• Лёгкие: ' + imported.easy.length + '\n' +
+                        '• Средние: ' + imported.medium.length + '\n' +
+                        '• Сложные: ' + imported.hard.length + '\n\n' +
+                        'Текущие блоки будут заменены.';
+
+                    if (!confirm(msg)) return;
+
+                    blocks = imported;
+                    renderAdminPanel();
+                    renderBlocksList();
+                    showSuccess('Импортировано ' + total + ' блоков! Не забудь сохранить.');
+                } catch(err) {
+                    showError('Ошибка чтения файла.', err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
         }
 
         // ═══════════════════════════════════════════════
