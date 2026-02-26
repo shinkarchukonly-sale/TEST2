@@ -1633,7 +1633,7 @@
         // Initialize
         async function init() {
             try {
-                loadWorksData();
+                await loadWorksData();
                 loadState();
                 renderFixedWorks();
                 if (!state.pages || state.pages.length === 0) {
@@ -3934,67 +3934,92 @@
             }
         }
 
-        function saveWorksData() {
+        async function saveWorksData() {
+            const btn = document.querySelector('button[onclick="saveWorksData()"]');
+            if (btn) { btn.disabled = true; btn.textContent = 'Сохраняю...'; }
             try {
+                const worksSettings = {
+                    percentages: state.percentages,
+                    fixedValues: state.fixedValues,
+                    integrationsData: state.integrationsData,
+                    disabledWorks: state.disabledWorks
+                };
+                await sbFetch('POST', 'settings?on_conflict=key', {
+                    key: 'works_settings',
+                    value: worksSettings,
+                    updated_at: new Date().toISOString()
+                });
                 localStorage.setItem('calculatorPercentages', JSON.stringify(state.percentages));
                 localStorage.setItem('calculatorFixedValues', JSON.stringify(state.fixedValues));
                 localStorage.setItem('calculatorIntegrationsData', JSON.stringify(state.integrationsData));
                 localStorage.setItem('calculatorDisabledWorks', JSON.stringify(state.disabledWorks));
-                
-                // Re-render fixed works and recalculate
                 renderFixedWorks();
                 calculateTotals();
                 saveState();
-                
-                alert('Изменения сохранены!');
+                showSuccess('Настройки блоков сохранены для всех!');
             } catch (e) {
-                alert('Ошибка сохранения: ' + e.message);
+                showError('Ошибка сохранения настроек.', e.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Сохранить изменения'; }
             }
         }
 
-        function resetWorksData() {
+        async function resetWorksData() {
             if (confirm('Сбросить все работы к исходным значениям? Это действие нельзя отменить.')) {
                 state.percentages = JSON.parse(JSON.stringify(defaultPercentages));
                 state.fixedValues = JSON.parse(JSON.stringify(defaultFixedValues));
                 state.integrationsData = JSON.parse(JSON.stringify(defaultIntegrations));
                 state.disabledWorks = { percentages: [], fixed: [], integrations: [] };
-                
+                try {
+                    await sbFetch('POST', 'settings?on_conflict=key', {
+                        key: 'works_settings',
+                        value: {
+                            percentages: state.percentages,
+                            fixedValues: state.fixedValues,
+                            integrationsData: state.integrationsData,
+                            disabledWorks: state.disabledWorks
+                        },
+                        updated_at: new Date().toISOString()
+                    });
+                } catch(e) { console.error('Reset save error:', e); }
                 localStorage.removeItem('calculatorPercentages');
                 localStorage.removeItem('calculatorFixedValues');
                 localStorage.removeItem('calculatorIntegrationsData');
                 localStorage.removeItem('calculatorDisabledWorks');
-                
                 renderWorksAdminPanel();
                 renderFixedWorks();
                 calculateTotals();
                 saveState();
-                
-                alert('Работы сброшены к исходным значениям');
+                showSuccess('Работы сброшены к исходным значениям');
             }
         }
 
-        // Load works data from localStorage
-        function loadWorksData() {
+        // Load works data from Supabase (fallback to localStorage)
+        async function loadWorksData() {
             try {
-                const savedPercentages = localStorage.getItem('calculatorPercentages');
-                const savedFixedValues = localStorage.getItem('calculatorFixedValues');
+                const rows = await sbFetch('GET', 'settings?key=eq.works_settings&select=value');
+                if (rows && rows.length > 0 && rows[0].value) {
+                    const s = rows[0].value;
+                    if (s.percentages)      state.percentages      = { ...state.percentages,      ...s.percentages };
+                    if (s.fixedValues)      state.fixedValues      = { ...state.fixedValues,      ...s.fixedValues };
+                    if (s.integrationsData) state.integrationsData = { ...state.integrationsData, ...s.integrationsData };
+                    if (s.disabledWorks)    state.disabledWorks    = { ...state.disabledWorks,    ...s.disabledWorks };
+                    return;
+                }
+            } catch(e) {
+                console.warn('Could not load works from Supabase, falling back to localStorage:', e);
+            }
+            try {
+                const savedPercentages      = localStorage.getItem('calculatorPercentages');
+                const savedFixedValues      = localStorage.getItem('calculatorFixedValues');
                 const savedIntegrationsData = localStorage.getItem('calculatorIntegrationsData');
-                const savedDisabledWorks = localStorage.getItem('calculatorDisabledWorks');
-                
-                if (savedPercentages) {
-                    state.percentages = { ...state.percentages, ...JSON.parse(savedPercentages) };
-                }
-                if (savedFixedValues) {
-                    state.fixedValues = { ...state.fixedValues, ...JSON.parse(savedFixedValues) };
-                }
-                if (savedIntegrationsData) {
-                    state.integrationsData = { ...state.integrationsData, ...JSON.parse(savedIntegrationsData) };
-                }
-                if (savedDisabledWorks) {
-                    state.disabledWorks = { ...state.disabledWorks, ...JSON.parse(savedDisabledWorks) };
-                }
-            } catch (e) {
-                console.error('Error loading works data:', e);
+                const savedDisabledWorks    = localStorage.getItem('calculatorDisabledWorks');
+                if (savedPercentages)      state.percentages      = { ...state.percentages,      ...JSON.parse(savedPercentages) };
+                if (savedFixedValues)      state.fixedValues      = { ...state.fixedValues,      ...JSON.parse(savedFixedValues) };
+                if (savedIntegrationsData) state.integrationsData = { ...state.integrationsData, ...JSON.parse(savedIntegrationsData) };
+                if (savedDisabledWorks)    state.disabledWorks    = { ...state.disabledWorks,    ...JSON.parse(savedDisabledWorks) };
+            } catch(e) {
+                console.error('Error loading works data from localStorage:', e);
             }
         }
 
