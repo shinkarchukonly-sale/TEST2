@@ -1562,6 +1562,10 @@
 
         // Load blocks from localStorage or use defaults
         let blocks = JSON.parse(JSON.stringify(defaultBlocks));
+        // Round all default values to integers
+        ['easy','medium','hard'].forEach(d => blocks[d].forEach(b => {
+            ['analytics','design','frontend','backend','test'].forEach(f => { b[f] = Math.round(b[f]); });
+        }));
         function loadBlocksData() {
             try {
                 const saved = localStorage.getItem('calculatorBlocks');
@@ -3606,7 +3610,7 @@
         }
 
         function updateBlockValue(difficulty, index, field, value) {
-            blocks[difficulty][index][field] = parseFloat(value) || 0;
+            blocks[difficulty][index][field] = Math.round(parseFloat(value) || 0);
             // Update total
             const block = blocks[difficulty][index];
             const total = block.analytics + block.design + block.frontend + block.backend + block.test;
@@ -4159,11 +4163,11 @@
 
                         imported[currentDiff].push({
                             name,
-                            analytics: parseFloat(row[2]) || 0,
-                            design:    parseFloat(row[3]) || 0,
-                            frontend:  parseFloat(row[4]) || 0,
-                            backend:   parseFloat(row[5]) || 0,
-                            test:      parseFloat(row[6]) || 0
+                            analytics: Math.round(parseFloat(row[2]) || 0),
+                            design:    Math.round(parseFloat(row[3]) || 0),
+                            frontend:  Math.round(parseFloat(row[4]) || 0),
+                            backend:   Math.round(parseFloat(row[5]) || 0),
+                            test:      Math.round(parseFloat(row[6]) || 0)
                         });
                     }
 
