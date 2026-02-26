@@ -50,10 +50,11 @@ module.exports = async function handler(req, res) {
     }
 
     const projectData = await projectResponse.json();
-    const projectId =
-      (projectData.item && (projectData.item.projectId || projectData.item.id)) ||
-      projectData.projectId ||
-      projectData.id;
+   const projectId =
+  (projectData.data && (projectData.data.ganttId || projectData.data.id)) ||
+  (projectData.item && (projectData.item.projectId || projectData.item.id)) ||
+  projectData.projectId ||
+  projectData.id;
 
     if (!projectId) {
       res.status(500).json({ error: 'GanttPro не вернул ID проекта', data: projectData });
