@@ -1,29 +1,33 @@
-export default async function handler(req, res) {
-  // CORS headers — обязательно для всех запросов
+module.exports = async function handler(req, res) {
+  // CORS headers — должны быть первыми
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Preflight запрос от браузера — отвечаем сразу
+  // Preflight запрос браузера
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   const GANTTPRO_API_KEY = process.env.GANTTPRO_API_KEY;
 
   if (!GANTTPRO_API_KEY) {
-    return res.status(500).json({ error: 'GANTTPRO_API_KEY не настроен в переменных окружения Vercel' });
+    res.status(500).json({ error: 'GANTTPRO_API_KEY не настроен' });
+    return;
   }
 
   try {
     const { projectName, tasks } = req.body;
 
     if (!projectName || !tasks || !Array.isArray(tasks)) {
-      return res.status(400).json({ error: 'Неверные данные запроса: нужны projectName и tasks[]' });
+      res.status(400).json({ error: 'Нужны projectName и tasks[]' });
+      return;
     }
 
     // 1. Создаём проект
@@ -38,47 +42,42 @@ export default async function handler(req, res) {
 
     if (!projectResponse.ok) {
       const errorText = await projectResponse.text();
-      return res.status(projectResponse.status).json({
-        error: 'Ошибка создания проекта в GanttPro',
-        details: errorText,
-        status: projectResponse.status
+      res.status(projectResponse.status).json({
+        error: 'Ошибка создания проекта',
+        details: errorText
       });
+      return;
     }
 
     const projectData = await projectResponse.json();
-    // Пробуем разные варианты структуры ответа API
     const projectId =
-      projectData?.item?.projectId ||
-      projectData?.item?.id ||
-      projectData?.projectId ||
-      projectData?.id;
+      (projectData.item && (projectData.item.projectId || projectData.item.id)) ||
+      projectData.projectId ||
+      projectData.id;
 
     if (!projectId) {
-      return res.status(500).json({
-        error: 'GanttPro не вернул ID проекта',
-        data: projectData
-      });
+      res.status(500).json({ error: 'GanttPro не вернул ID проекта', data: projectData });
+      return;
     }
 
     // 2. Создаём задачи
     let tasksCreated = 0;
     const parentMap = {};
 
-    for (const task of tasks) {
-      if (!task.name || task.hours === undefined) continue;
+    for (let i = 0; i < tasks.length; i++) {
+      const task = tasks[i];
+      if (!task.name) continue;
 
       const taskBody = {
         projectId: projectId,
         name: task.name,
-        estimation: Math.round((task.hours || 0) * 60) // GanttPro принимает минуты
+        estimation: Math.round((task.hours || 0) * 60)
       };
 
-      // Устанавливаем родительскую задачу если есть
       if (task.parentSection && parentMap[task.parentSection]) {
         taskBody.parent = parentMap[task.parentSection];
       }
 
-      // Секция = группирующая задача
       if (task.isSection) {
         taskBody.type = 'project';
       }
@@ -96,30 +95,24 @@ export default async function handler(req, res) {
         if (taskResponse.ok) {
           const taskData = await taskResponse.json();
           tasksCreated++;
-
-          // Запоминаем ID секции чтобы вложить в неё подзадачи
-          const taskId =
-            taskData?.item?.id ||
-            taskData?.id;
-
+          const taskId = (taskData.item && taskData.item.id) || taskData.id;
           if (task.isSection && task.name && taskId) {
             parentMap[task.name] = taskId;
           }
         }
-      } catch (taskError) {
-        // Продолжаем создавать остальные задачи даже если одна упала
-        console.error('Ошибка создания задачи:', task.name, taskError.message);
+      } catch (e) {
+        // продолжаем даже если одна задача не создалась
       }
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       projectId: projectId,
       tasksCreated: tasksCreated,
-      message: `Проект "${projectName}" создан с ${tasksCreated} задачами`
+      message: 'Проект "' + projectName + '" создан с ' + tasksCreated + ' задачами'
     });
 
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
-}
+};
