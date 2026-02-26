@@ -52,21 +52,19 @@ export default async function handler(req, res) {
 
     // 2. Create tasks with hierarchy
     const createdTasks = [];
-    const parentMap = {}; // Map section names to their IDs
+    const parentMap = {};
 
     for (const task of tasks) {
       const taskBody = {
         projectId: projectId,
         name: task.name,
-        estimation: task.hours * 60 // GanttPro uses minutes
+        estimation: task.hours * 60
       };
 
-      // If task has a parent section, find its ID
       if (task.parentSection && parentMap[task.parentSection]) {
         taskBody.parent = parentMap[task.parentSection];
       }
 
-      // If this is a section (group), set type to "project" for grouping
       if (task.isSection) {
         taskBody.type = 'project';
       }
@@ -84,12 +82,9 @@ export default async function handler(req, res) {
         const taskData = await taskResponse.json();
         createdTasks.push(taskData.item || taskData);
         
-        // Save section ID for child tasks
         if (task.isSection && taskData.item?.id) {
           parentMap[task.name] = taskData.item.id;
         }
-      } else {
-        console.error('Failed to create task:', task.name, await taskResponse.text());
       }
     }
 
@@ -101,7 +96,6 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Error:', error);
     return res.status(500).json({ error: error.message });
   }
 }
