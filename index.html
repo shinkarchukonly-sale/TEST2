@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Калькулятор оценки разработки корпоративного сайта</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -1445,6 +1446,16 @@
                 <div style="font-size:13px;color:#64748B;margin-top:4px;">Все сохранённые оценки</div>
             </div>
             <div class="header-actions">
+                <label class="btn btn-secondary" style="cursor:pointer;" title="Создать проект из Excel со списком страниц">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                    Из Excel
+                    <input type="file" accept=".xlsx,.xls" style="display:none;" onchange="importPagesFromExcel(this)">
+                </label>
+                <label class="btn btn-secondary" style="cursor:pointer;" title="Создать проект из PDF структуры (карта сайта из Figma)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    Из PDF
+                    <input type="file" accept=".pdf" style="display:none;" onchange="importFromPdf(this)">
+                </label>
                 <button class="btn btn-primary" onclick="createNewProject()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Новый проект
@@ -4326,6 +4337,131 @@
             e.currentTarget.classList.remove('drag-over');
         }
 
+        // ═══════════════════════════════════════════════
+        // ИМПОРТ СТРАНИЦ ИЗ EXCEL / PDF
+        // ═══════════════════════════════════════════════
+        let _pdfImportPages = [];
+
+        function importPagesFromExcel(input) {
+            const file = input.files[0];
+            if (!file) return;
+            input.value = '';
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const wb = XLSX.read(data, { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+                    const pageNames = rows
+                        .map(r => r[0] ? String(r[0]).trim() : '')
+                        .filter(n => n.length > 0);
+                    if (pageNames.length === 0) {
+                        showError('Страницы не найдены.', 'Убедитесь что названия в первом столбце.');
+                        return;
+                    }
+                    _pdfImportPages = pageNames;
+                    showPagesImportModal(pageNames);
+                } catch(err) {
+                    showError('Ошибка чтения файла.', err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function importFromPdf(input) {
+            showError('PDF-импорт в разработке.', 'Используйте импорт из Excel.');
+            input.value = '';
+        }
+
+        function showPagesImportModal(pages) {
+            const list = document.getElementById('pdfPagesList');
+            list.innerHTML = pages.map((name, i) => `
+                <label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #F1F5F9;cursor:pointer;">
+                    <input type="checkbox" checked data-index="${i}" style="width:16px;height:16px;cursor:pointer;">
+                    <span style="font-size:14px;">${name}</span>
+                </label>
+            `).join('');
+            document.getElementById('pdfPagesCount').textContent = pages.length + ' страниц';
+            document.getElementById('pdfImportModal').classList.add('active');
+        }
+
+        function closePdfImportModal() {
+            document.getElementById('pdfImportModal').classList.remove('active');
+            _pdfImportPages = [];
+        }
+
+        async function confirmPdfImport() {
+            const checked = document.querySelectorAll('#pdfPagesList input[type=checkbox]:checked');
+            const selectedNames = [...checked].map(cb => _pdfImportPages[parseInt(cb.dataset.index)]);
+            if (selectedNames.length === 0) {
+                showError('Выберите хотя бы одну страницу.');
+                return;
+            }
+            const name = prompt('Название проекта:', 'Проект ' + new Date().toLocaleDateString('ru-RU'));
+            if (!name) return;
+            closePdfImportModal();
+
+            // Reset state and build pages directly (avoid addPage loop with duplicate IDs)
+            state.pages = selectedNames.map((pageName, i) => ({
+                id: Date.now() + i,
+                name: pageName,
+                expanded: true,
+                blocks: []
+            }));
+            state.customWorks = { analytics: [], design: [], frontend: [], backend: [], testing: [], content: [], integrations: [] };
+            state.integrations = { crm: false, maps: false, b24: false, hh: false, email: false, metrics: false, chat: false };
+            currentProjectId = null;
+
+            renderPages();
+            calculateTotals();
+
+            isSaving = true;
+            setSaveBtn('loading');
+            try {
+                const snapshot = getStateSnapshot();
+                const rows = await sbFetch('POST', TABLE, { name, snapshot, updated_at: new Date().toISOString() });
+                const row = Array.isArray(rows) ? rows[0] : rows;
+                currentProjectId = row.id;
+                projects.unshift({ id: row.id, name: row.name, createdAt: row.created_at, updatedAt: row.updated_at, snapshot, totals: calcProjectTotals(snapshot) });
+                updateProjectsCount();
+                updateCurrentProjectLabel();
+                setSaveBtn('saved');
+                switchView('calculator');
+                showSuccess('Проект создан: ' + selectedNames.length + ' страниц!');
+            } catch (e) {
+                showError('Ошибка сохранения проекта.', e.message);
+                setSaveBtn('idle');
+            } finally {
+                isSaving = false;
+            }
+        }
+
     </script>
+
+    <!-- PDF Import Modal -->
+    <div class="modal" id="pdfImportModal">
+        <div class="modal-content" style="max-width:560px;">
+            <div class="modal-header">
+                <h3>Импорт структуры из PDF</h3>
+                <button class="close-btn" onclick="closePdfImportModal()">×</button>
+            </div>
+            <div class="modal-body" id="pdfImportBody">
+                <div style="color:#64748B;margin-bottom:16px;font-size:13px;">
+                    Найдены страницы из синих блоков карты сайта. Снимите галочки с тех, которые не нужны.
+                </div>
+                <div id="pdfPagesList" style="max-height:360px;overflow-y:auto;"></div>
+            </div>
+            <div style="padding:16px 24px;border-top:1px solid #E2E8F0;display:flex;gap:12px;align-items:center;">
+                <button class="btn btn-primary" onclick="confirmPdfImport()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    Создать проект
+                </button>
+                <button class="btn btn-secondary" onclick="closePdfImportModal()">Отмена</button>
+                <span style="margin-left:auto;font-size:13px;color:#64748B;" id="pdfPagesCount"></span>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
