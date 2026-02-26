@@ -1,10 +1,8 @@
 module.exports = async function handler(req, res) {
-  // CORS headers — должны быть первыми
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Preflight запрос браузера
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
@@ -16,7 +14,6 @@ module.exports = async function handler(req, res) {
   }
 
   const GANTTPRO_API_KEY = process.env.GANTTPRO_API_KEY;
-
   if (!GANTTPRO_API_KEY) {
     res.status(500).json({ error: 'GANTTPRO_API_KEY не настроен' });
     return;
@@ -40,21 +37,14 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({ name: projectName })
     });
 
-    if (!projectResponse.ok) {
-      const errorText = await projectResponse.text();
-      res.status(projectResponse.status).json({
-        error: 'Ошибка создания проекта',
-        details: errorText
-      });
-      return;
-    }
-
     const projectData = await projectResponse.json();
-   const projectId =
-  (projectData.data && (projectData.data.ganttId || projectData.data.id)) ||
-  (projectData.item && (projectData.item.projectId || projectData.item.id)) ||
-  projectData.projectId ||
-  projectData.id;
+
+    // GanttPro возвращает ID в поле data.ganttId
+    const projectId =
+      (projectData.data && (projectData.data.ganttId || projectData.data.id)) ||
+      (projectData.item && (projectData.item.projectId || projectData.item.id)) ||
+      projectData.projectId ||
+      projectData.id;
 
     if (!projectId) {
       res.status(500).json({ error: 'GanttPro не вернул ID проекта', data: projectData });
@@ -96,14 +86,15 @@ module.exports = async function handler(req, res) {
         if (taskResponse.ok) {
           const taskData = await taskResponse.json();
           tasksCreated++;
-          const taskId = (taskData.item && taskData.item.id) || taskData.id;
+          const taskId =
+            (taskData.data && taskData.data.id) ||
+            (taskData.item && taskData.item.id) ||
+            taskData.id;
           if (task.isSection && task.name && taskId) {
             parentMap[task.name] = taskId;
           }
         }
-      } catch (e) {
-        // продолжаем даже если одна задача не создалась
-      }
+      } catch (e) {}
     }
 
     res.status(200).json({
