@@ -1027,6 +1027,24 @@
             border-radius: 6px;
         }
 
+        /* Page card drag & drop */
+        .page-card.page-dragging {
+            opacity: 0.4;
+        }
+        .page-card.page-drag-over {
+            border-top: 3px solid #3B82F6;
+        }
+        .page-drag-handle {
+            cursor: grab;
+            color: #CBD5E1;
+            padding: 0 8px 0 0;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .page-drag-handle:active { cursor: grabbing; }
+        .page-drag-handle:hover { color: #94A3B8; }
+
         </style>
 </head>
 <body>
@@ -1742,6 +1760,7 @@
         }
 
         function togglePage(pageId) {
+            if (_pageCardDragJustEnded) return; // ignore click fired right after drag
             const page = state.pages.find(p => p.id === pageId);
             if (page) {
                 page.expanded = !page.expanded;
@@ -1859,9 +1878,18 @@
                 pageTotal.total = pageTotal.analytics + pageTotal.design + pageTotal.frontend + pageTotal.backend + pageTotal.test;
                 
                 html += `
-                    <div class="page-card">
+                    <div class="page-card"
+                         draggable="true"
+                         data-page-id="${page.id}"
+                         ondragstart="onPageCardDragStart(event)"
+                         ondragover="onPageCardDragOver(event)"
+                         ondrop="onPageCardDrop(event)"
+                         ondragend="onPageCardDragEnd(event)">
                         <div class="page-header" onclick="togglePage(${page.id})">
                             <div class="page-title-wrapper">
+                                <span class="page-drag-handle" draggable="false" onclick="event.stopPropagation()" title="Перетащить страницу">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                                </span>
                                 <svg class="chevron ${page.expanded ? 'expanded' : ''}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                                 <input type="text" class="page-title-input" value="${page.name}" onclick="event.stopPropagation()" onchange="updatePageName(${page.id}, this.value)">
                             </div>
@@ -4258,6 +4286,59 @@
             document.querySelectorAll('tr.drag-over').forEach(r => r.classList.remove('drag-over'));
             _pageDrag = { pageId: null, blockId: null };
         }
+
+
+        // ═══════════════════════════════════════════════
+        // DRAG & DROP — порядок страниц (page cards)
+        // ═══════════════════════════════════════════════
+        let _pageCardDrag = { pageId: null };
+        let _pageCardDragJustEnded = false;
+
+        function onPageCardDragStart(e) {
+            const card = e.currentTarget;
+            _pageCardDrag.pageId = parseInt(card.dataset.pageId);
+            card.classList.add('page-dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            // Prevent triggering togglePage on drag start
+            e.stopPropagation();
+        }
+
+        function onPageCardDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const card = e.currentTarget;
+            if (parseInt(card.dataset.pageId) === _pageCardDrag.pageId) return;
+            document.querySelectorAll('.page-card.page-drag-over').forEach(c => c.classList.remove('page-drag-over'));
+            card.classList.add('page-drag-over');
+        }
+
+        function onPageCardDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const card = e.currentTarget;
+            const targetPageId = parseInt(card.dataset.pageId);
+            if (_pageCardDrag.pageId === null || _pageCardDrag.pageId === targetPageId) return;
+
+            const fromIdx = state.pages.findIndex(p => p.id === _pageCardDrag.pageId);
+            const toIdx   = state.pages.findIndex(p => p.id === targetPageId);
+            if (fromIdx === -1 || toIdx === -1) return;
+
+            const [moved] = state.pages.splice(fromIdx, 1);
+            state.pages.splice(toIdx, 0, moved);
+
+            renderPages();
+            calculateTotals();
+            saveState();
+        }
+
+        function onPageCardDragEnd(e) {
+            e.currentTarget.classList.remove('page-dragging');
+            document.querySelectorAll('.page-card.page-drag-over').forEach(c => c.classList.remove('page-drag-over'));
+            _pageCardDrag = { pageId: null };
+            _pageCardDragJustEnded = true;
+            setTimeout(() => { _pageCardDragJustEnded = false; }, 300);
+        }
+
 
 
         // ═══════════════════════════════════════════════
