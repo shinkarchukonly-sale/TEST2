@@ -1719,11 +1719,11 @@
                 renderPages();
                 calculateTotals();
                 updateCurrentProjectLabel();
-                // Load projects count from Supabase in background
-                await loadProjects();
             } catch(e) {
                 console.error('init error:', e);
             }
+            // Load projects in background — не блокируем инициализацию
+            loadProjects().catch(e => console.error('loadProjects error:', e));
         }
 
         // Page management
@@ -2270,6 +2270,7 @@
 
         // Calculate totals
         function calculateTotals() {
+          try {
             // 1. Calculate blocks total
             const blocksTotal = {
                 analytics: 0,
@@ -2504,6 +2505,10 @@
             const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 2500;
             const projectCost = totalModifiedSum * hourlyRate;
             document.getElementById('projectCost').textContent = projectCost.toLocaleString('ru-RU') + ' ₽';
+          } catch(e) {
+            console.error('calculateTotals error:', e);
+            showError('Ошибка расчёта итогов', e.message);
+          }
         }
 
         // Collapsible sections
@@ -2841,7 +2846,9 @@
             switchView('calculator');
             renderPages();
             renderFixedWorks();
-            calculateTotals();
+            setTimeout(() => {
+                calculateTotals();
+            }, 50);
             updateCurrentProjectLabel();
         }
 
