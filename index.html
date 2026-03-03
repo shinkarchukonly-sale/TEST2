@@ -1097,7 +1097,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
                         Excel
                     </button>
-                    <button class="btn btn-secondary" onclick="exportToGanttPro()" title="Скачать .xml (MS Project) для импорта в GanttPRO — с предшественниками">
+                    <button class="btn btn-secondary" onclick="exportToGanttPro()" title="Скачать .xlsx для импорта в GanttPRO">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         GanttPro ↓
                     </button>
@@ -3516,6 +3516,7 @@
                     'Нагрузочное тестирование и контент',
                 ]);
 
+                // Build rows with WBS + predecessor
                 const rows = [];
                 let s = 0, sub = {};
                 tasks.forEach(t => {
@@ -3529,43 +3530,60 @@
                             total += tasks[i].hours || 0;
                             if (approvalAfter.has(tasks[i].name)) total += 24;
                         }
-                        rows.push({ wbs: String(s), name: t.name, hours: total, isSection: true });
+                        rows.push({ wbs: String(s), name: t.name, hours: total, pred: '' });
                     } else {
                         sub[s] = (sub[s] || 0) + 1;
-                        rows.push({ wbs: `${s}.${sub[s]}`, name: t.name, hours: t.hours || 0, isSection: false });
+                        rows.push({ wbs: `${s}.${sub[s]}`, name: t.name, hours: t.hours || 0, pred: '' });
                         if (approvalAfter.has(t.name)) {
                             sub[s]++;
-                            rows.push({ wbs: `${s}.${sub[s]}`, name: 'Согласование', hours: 24, isSection: false });
+                            rows.push({ wbs: `${s}.${sub[s]}`, name: 'Согласование', hours: 24, pred: '' });
                         }
                     }
                 });
 
-                // Assign predecessors
+                // ── Назначаем предшественников по логике из PDF ──────────
+                // Строим индекс wbs → индекс в rows для удобного поиска
+                const wbsIdx = {};
+                rows.forEach((r, i) => { wbsIdx[r.wbs] = i; });
+
+                // Предшественники: каждая задача → wbs её предшественника
+                // Секции предшественников не имеют.
+                // Внутри секции: каждая следующая задача = предыдущая (цепочка),
+                // кроме особых межсекционных связей из PDF.
                 const crossPreds = {
-                    '3.1': '2.5',
-                    '4.1': '3.4',
-                    '5.1': '',
+                    // Дизайн начинается после последнего согласования Проектирования
+                    '3.1': '2.5',   // Дизайн главной ← Согласование (конец прототипов)
+                    // Front-end
+                    '4.1': '3.4',   // Разворачивание ← Согласование дизайна внутренних
+                    '4.2': '4.1',
+                    // Back-end стартует после согласования front-end анимаций
+                    '5':   '4.5',   // секция Back-end ← согласование
+                    '5.1': '',      // Разворачивание back-end — нет предшественника (параллельно)
                     '5.2': '5.1',
                     '5.3': '5.2',
-                    '5.4': '5.3',
-                    '5.5': '5.3',
-                    '5.6': '5.4',
-                    '6.1': '4.1',
-                    '7.1': '5.2',
+                    '5.4': '5.3',   // Согласование ← Back-end внутренних
+                    '5.5': '5.3',   // Мультиязычность ← Back-end внутренних (параллельно с согласованием)
+                    '5.6': '5.4',   // Базовый поиск ← Согласование
+                    // Тестирование
+                    '6.1': '4.1',   // Тестирование главной ← Разворачивание front-end
+                    // Контент
+                    '7.1': '5.2',   // Наполнение ← Back-end главной
                 };
-                const wbsSet = new Set(rows.map(r => r.wbs));
-                rows.forEach(row => {
-                    if (row.isSection) { row.pred = ''; return; }
-                    const sec = row.wbs.split('.')[0];
-                    const subN = parseInt(row.wbs.split('.')[1]);
+
+                rows.forEach((row, i) => {
+                    if (!row.wbs.includes('.')) return; // секции пропускаем
+
                     if (crossPreds.hasOwnProperty(row.wbs)) {
                         row.pred = crossPreds[row.wbs];
-                    } else if (subN > 1) {
-                        row.pred = `${sec}.${subN - 1}`;
                     } else {
-                        row.pred = '';
+                        // По умолчанию — предыдущая строка внутри той же секции
+                        const sec = row.wbs.split('.')[0];
+                        const subN = parseInt(row.wbs.split('.')[1]);
+                        if (subN > 1) {
+                            row.pred = `${sec}.${subN - 1}`;
+                        }
+                        // Первая задача секции — нет предшественника (GanttPRO сам ставит от секции)
                     }
-                    if (row.pred && !wbsSet.has(row.pred)) row.pred = '';
                 });
 
                 const wsData = [];
@@ -3578,17 +3596,27 @@
                     ]);
                 });
 
+                // ── SheetJS: create workbook ──────────────────────────────
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.aoa_to_sheet(wsData);
-                ws['!cols'] = [{ wch: 56 }, { wch: 12 }, { wch: 10 }, { wch: 12 }];
+
+                ws['!cols'] = [
+                    { wch: 56 }, // Task Name
+                    { wch: 12 }, // Duration
+                    { wch: 10 }, // WBS
+                    { wch: 12 }, // Predecessor
+                ];
+
                 XLSX.utils.book_append_sheet(wb, ws, 'Project');
+
                 const safeProjectName = projectName.replace(/[^\wА-яЁё\s\-]/gi, '').trim() || 'ganttpro_export';
                 XLSX.writeFile(wb, safeProjectName + '_GanttPRO.xlsx');
+
                 showSuccess('Файл скачан! В GanttPRO: + → Импорт → загрузить файл → Начать импорт.');
 
             } catch (err) {
                 showError('Ошибка создания файла GanttPRO', err.message);
-
+            }
         }
 
         // ==================== ADMIN PANEL FUNCTIONS ====================
