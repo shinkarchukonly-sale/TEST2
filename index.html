@@ -1097,9 +1097,9 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
                         Excel
                     </button>
-                    <button class="btn btn-secondary" onclick="exportToGanttPro()">
+                    <button class="btn btn-secondary" onclick="exportToGanttPro()" title="Скачать .xml (MS Project) для импорта в GanttPRO — с предшественниками">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        GanttPro
+                        GanttPro ↓
                     </button>
                     <button class="btn btn-primary" onclick="saveProject()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -3307,23 +3307,18 @@
             XLSX.writeFile(wb, 'calculator-export.xlsx');
         }
 
-        // GanttPro API URL - замените на ваш URL после деплоя на Vercel
-        const GANTTPRO_API_URL = localStorage.getItem('ganttproApiUrl') || '';
+        // ── GanttPRO XLSX Export ─────────────────────────────────────────────
+        // Generates an .xlsx file ready for GanttPRO import (no server needed).
+        // Column layout GanttPRO recognises during column-mapping step:
+        //   WBS | Task Name | Duration (hours) | Start Date | End Date | Description
+        // Dates: DD/MM/YYYY  |  Duration: integer hours  |  WBS: dot-notation hierarchy
 
-        async function exportToGanttPro() {
-            if (!GANTTPRO_API_URL) {
-                const url = prompt('Введите URL вашего Vercel сервиса (например: https://your-project.vercel.app):\n\nЭто нужно сделать только один раз.');
-                if (url) {
-                    localStorage.setItem('ganttproApiUrl', url);
-                    location.reload();
-                }
-                return;
-            }
+        function exportToGanttPro() {
+            const projectName = (currentProjectId
+                ? (projects.find(p => p.id === currentProjectId)?.name || 'Проект')
+                : 'Проект');
 
-            const projectName = prompt('Введите название проекта для GanttPro:', 'Новый проект ' + new Date().toLocaleDateString('ru-RU'));
-            if (!projectName) return;
-
-            // Собираем все данные для выгрузки
+            // ── Collect tasks same logic as existing export ───────────────
             const tasks = [];
 
             // Calculate totals for percentage-based works
@@ -3341,208 +3336,259 @@
             // Helper to check if work is disabled
             const isDisabled = (type, key) => state.disabledWorks[type]?.includes(key);
 
-            // 1. Аналитика
-            tasks.push({ name: '1. Предпроектная аналитика', hours: 0, isSection: true });
-            
-            if (!isDisabled('percentages', 'analyticsCuration')) {
-                tasks.push({ name: 'Курирование', hours: Math.round(blocksTotal.analytics * state.percentages.analyticsCuration / 100), parentSection: '1. Предпроектная аналитика' });
-            }
-            if (!isDisabled('percentages', 'analyticsOperations')) {
-                tasks.push({ name: 'Операционка', hours: Math.round(blocksTotal.analytics * state.percentages.analyticsOperations / 100), parentSection: '1. Предпроектная аналитика' });
-            }
-            if (!isDisabled('fixed', 'analyticsBenchmark')) {
-                tasks.push({ name: 'Анализ конкурентного окружения', hours: Math.round(state.fixedValues.analyticsBenchmark), parentSection: '1. Предпроектная аналитика' });
-            }
-            if (!isDisabled('fixed', 'analyticsBrief')) {
-                tasks.push({ name: 'Подготовка брифа', hours: Math.round(state.fixedValues.analyticsBrief), parentSection: '1. Предпроектная аналитика' });
-            }
-            if (!isDisabled('fixed', 'analyticsRequirements')) {
-                tasks.push({ name: 'Составление бизнес требований', hours: Math.round(state.fixedValues.analyticsRequirements), parentSection: '1. Предпроектная аналитика' });
-            }
-            if (!isDisabled('fixed', 'analyticsStructure')) {
-                tasks.push({ name: 'Составление структуры', hours: Math.round(state.fixedValues.analyticsStructure), parentSection: '1. Предпроектная аналитика' });
-            }
-            if (!isDisabled('percentages', 'analyticsPreparation')) {
-                tasks.push({ name: 'Подготовка макетов к этапам', hours: Math.round(blocksTotal.analytics * state.percentages.analyticsPreparation / 100), parentSection: '1. Предпроектная аналитика' });
-            }
+            // Helpers
+            const pct = (base, key) => isDisabled('percentages', key) ? 0 : Math.round(base * state.percentages[key] / 100);
+            const fix = (key) => isDisabled('fixed', key) ? 0 : Math.round(state.fixedValues[key] || 0);
 
-            // 2. Проектирование
-            const firstTwo = state.pages.slice(0, 2);
+            const firstTwo  = state.pages.slice(0, 2);
             const restPages = state.pages.slice(2);
             let firstTwoAnalytics = 0, restAnalytics = 0;
-            firstTwo.forEach(p => p.blocks.forEach(b => firstTwoAnalytics += b.analytics));
-            restPages.forEach(p => p.blocks.forEach(b => restAnalytics += b.analytics));
+            let firstTwoDesign = 0,    restDesign = 0;
+            let firstTwoFrontend = 0,  restFrontend = 0;
+            let firstTwoBackend = 0,   restBackend = 0;
+            let firstTwoTest = 0,      restTest = 0;
+            firstTwo.forEach(p => p.blocks.forEach(b => {
+                firstTwoAnalytics += b.analytics; firstTwoDesign += b.design;
+                firstTwoFrontend  += b.frontend;  firstTwoBackend += b.backend;
+                firstTwoTest      += b.test;
+            }));
+            restPages.forEach(p => p.blocks.forEach(b => {
+                restAnalytics += b.analytics; restDesign += b.design;
+                restFrontend  += b.frontend;  restBackend += b.backend;
+                restTest      += b.test;
+            }));
 
+            // ── 1. Аналитика ──────────────────────────────────────────────
+            // Курирование + Операционка + Подготовка макетов — распределяем
+            // поровну между всеми дочерними задачами этапа
+            tasks.push({ name: '1. Предпроектная аналитика', hours: 0, isSection: true });
+
+            const analyticsManagement = pct(blocksTotal.analytics, 'analyticsCuration')
+                + pct(blocksTotal.analytics, 'analyticsOperations')
+                + pct(blocksTotal.analytics, 'analyticsPreparation');
+
+            // Считаем сколько задач получат распределение
+            const analyticsTasks = [
+                { key: 'analyticsBenchmark',    name: 'Анализ конкурентного окружения' },
+                { key: 'analyticsBrief',         name: 'Подготовка брифа и интервьюирование' },
+                { key: 'analyticsRequirements',  name: 'Составление бизнес-требований' },
+                { key: 'analyticsStructure',     name: 'Проектирование структуры сайта' },
+            ].filter(t => fix(t.key) > 0);
+
+            const perTask = analyticsTasks.length > 0 ? Math.round(analyticsManagement / analyticsTasks.length) : 0;
+
+            analyticsTasks.forEach(t => {
+                tasks.push({ name: t.name, hours: fix(t.key) + perTask });
+            });
+
+            // ── 2. Проектирование ─────────────────────────────────────────
+            // + Написание ТЗ переносим сюда из контента
             tasks.push({ name: '2. Проектирование', hours: 0, isSection: true });
-            tasks.push({ name: 'Прототип главной и одной внутренней', hours: Math.round(firstTwoAnalytics), parentSection: '2. Проектирование' });
+            if (fix('contentTZ') > 0) {
+                tasks.push({ name: 'Написание технического задания', hours: fix('contentTZ') });
+            }
+            if (firstTwoAnalytics > 0) {
+                tasks.push({ name: 'Прототип главной и одной внутренней', hours: Math.round(firstTwoAnalytics) });
+            }
             if (restAnalytics > 0) {
-                tasks.push({ name: 'Прототип внутренних страниц', hours: Math.round(restAnalytics), parentSection: '2. Проектирование' });
+                tasks.push({ name: 'Прототип внутренних страниц', hours: Math.round(restAnalytics) });
             }
 
-            // 3. Дизайн
-            let firstTwoDesign = 0, restDesign = 0;
-            firstTwo.forEach(p => p.blocks.forEach(b => firstTwoDesign += b.design));
-            restPages.forEach(p => p.blocks.forEach(b => restDesign += b.design));
-
+            // ── 3. Дизайн ────────────────────────────────────────────────
+            // Операционка → суммируется в дизайн страниц (первые две)
+            // Анимации главной + внутренних → «Анимации страниц»
+            // UI-kit главной + общий → «UI-kit»
+            const designOps = pct(blocksTotal.design, 'designOperations');
             tasks.push({ name: '3. Дизайн', hours: 0, isSection: true });
-            tasks.push({ name: 'Дизайн главной и одной внутренней', hours: Math.round(firstTwoDesign), parentSection: '3. Дизайн' });
+            if (firstTwoDesign > 0) {
+                tasks.push({ name: 'Дизайн главной и одной внутренней', hours: Math.round(firstTwoDesign) + (restDesign === 0 ? designOps : 0) });
+            }
             if (restDesign > 0) {
-                tasks.push({ name: 'Дизайн внутренних страниц', hours: Math.round(restDesign), parentSection: '3. Дизайн' });
+                tasks.push({ name: 'Дизайн внутренних страниц', hours: Math.round(restDesign) + designOps });
             }
-            if (!isDisabled('percentages', 'designOperations')) {
-                tasks.push({ name: 'Операционка', hours: Math.round(blocksTotal.design * state.percentages.designOperations / 100), parentSection: '3. Дизайн' });
+            const designAdaptMain = fix('designAdaptMain'), designAdaptAll = fix('designAdaptAll');
+            if (designAdaptMain > 0 || designAdaptAll > 0) {
+                tasks.push({ name: 'Адаптивная вёрстка макетов', hours: designAdaptMain + designAdaptAll });
             }
-            if (!isDisabled('fixed', 'designAnimMain')) {
-                tasks.push({ name: 'Анимации главной', hours: Math.round(state.fixedValues.designAnimMain), parentSection: '3. Дизайн' });
+            // Анимации страниц = главная + внутренние
+            const designAnimTotal = fix('designAnimMain') + fix('designAnimInner');
+            if (designAnimTotal > 0) {
+                tasks.push({ name: 'Анимации страниц', hours: designAnimTotal });
             }
-            if (!isDisabled('fixed', 'designAnimInner')) {
-                tasks.push({ name: 'Анимации внутренних', hours: Math.round(state.fixedValues.designAnimInner), parentSection: '3. Дизайн' });
-            }
-            if (!isDisabled('fixed', 'designAdaptMain')) {
-                tasks.push({ name: 'Адаптивы (главная и 1 внутр)', hours: Math.round(state.fixedValues.designAdaptMain), parentSection: '3. Дизайн' });
-            }
-            if (!isDisabled('fixed', 'designAdaptAll')) {
-                tasks.push({ name: 'Адаптивы всех страниц', hours: Math.round(state.fixedValues.designAdaptAll), parentSection: '3. Дизайн' });
-            }
-            if (!isDisabled('fixed', 'designUIKitMain')) {
-                tasks.push({ name: 'UI-kit (главная и 1 внутр)', hours: Math.round(state.fixedValues.designUIKitMain), parentSection: '3. Дизайн' });
-            }
-            if (!isDisabled('percentages', 'designUIKit')) {
-                tasks.push({ name: 'UI-kit (общий)', hours: Math.round(blocksTotal.design * state.percentages.designUIKit / 100), parentSection: '3. Дизайн' });
+            // UI-kit = главная + общий
+            const designUIKitTotal = fix('designUIKitMain') + pct(blocksTotal.design, 'designUIKit');
+            if (designUIKitTotal > 0) {
+                tasks.push({ name: 'UI-kit', hours: designUIKitTotal });
             }
 
-            // 4. Frontend
-            let firstTwoFrontend = 0, restFrontend = 0;
-            firstTwo.forEach(p => p.blocks.forEach(b => firstTwoFrontend += b.frontend));
-            restPages.forEach(p => p.blocks.forEach(b => restFrontend += b.frontend));
-
+            // ── 4. Front-end ──────────────────────────────────────────────
+            // Разворачивание → первым; Оценка прототипов + Операционка +
+            // Ревью + Правка багов → суммируются в страницы
+            const feSetup    = fix('frontendSetup');
+            const feInternal = pct(blocksTotal.frontend, 'frontendOperations')
+                             + fix('frontendPrototypes')
+                             + pct(blocksTotal.frontend, 'frontendReview')
+                             + pct(blocksTotal.frontend, 'frontendBugs');
             tasks.push({ name: '4. Front-end', hours: 0, isSection: true });
-            tasks.push({ name: 'Front-end главной и одной внутренней', hours: Math.round(firstTwoFrontend), parentSection: '4. Front-end' });
+            if (feSetup > 0) {
+                tasks.push({ name: 'Разворачивание проекта', hours: feSetup });
+            }
+            if (firstTwoFrontend > 0) {
+                tasks.push({ name: 'Front-end главной и одной внутренней', hours: Math.round(firstTwoFrontend) + (restFrontend === 0 ? feInternal : 0) });
+            }
             if (restFrontend > 0) {
-                tasks.push({ name: 'Front-end внутренних страниц', hours: Math.round(restFrontend), parentSection: '4. Front-end' });
+                tasks.push({ name: 'Front-end внутренних страниц', hours: Math.round(restFrontend) + feInternal });
             }
-            if (!isDisabled('fixed', 'frontendSetup')) {
-                tasks.push({ name: 'Разворачивание проекта', hours: Math.round(state.fixedValues.frontendSetup), parentSection: '4. Front-end' });
-            }
-            if (!isDisabled('fixed', 'frontendPrototypes')) {
-                tasks.push({ name: 'Оценка прототипов', hours: Math.round(state.fixedValues.frontendPrototypes), parentSection: '4. Front-end' });
-            }
-            if (!isDisabled('percentages', 'frontendOperations')) {
-                tasks.push({ name: 'Операционка', hours: Math.round(blocksTotal.frontend * state.percentages.frontendOperations / 100), parentSection: '4. Front-end' });
-            }
-            if (!isDisabled('percentages', 'frontendReview')) {
-                tasks.push({ name: 'Ревью и курирование', hours: Math.round(blocksTotal.frontend * state.percentages.frontendReview / 100), parentSection: '4. Front-end' });
-            }
-            if (!isDisabled('percentages', 'frontendBugs')) {
-                tasks.push({ name: 'Правка багов', hours: Math.round(blocksTotal.frontend * state.percentages.frontendBugs / 100), parentSection: '4. Front-end' });
-            }
-            if (!isDisabled('fixed', 'frontendAnimMain')) {
-                tasks.push({ name: 'Анимации главной', hours: Math.round(state.fixedValues.frontendAnimMain), parentSection: '4. Front-end' });
-            }
-            if (!isDisabled('fixed', 'frontendAnimInner')) {
-                tasks.push({ name: 'Анимации внутренних', hours: Math.round(state.fixedValues.frontendAnimInner), parentSection: '4. Front-end' });
+            // Анимации front = главная + внутренние
+            const feAnimTotal = fix('frontendAnimMain') + fix('frontendAnimInner');
+            if (feAnimTotal > 0) {
+                tasks.push({ name: 'Анимации страниц', hours: feAnimTotal });
             }
 
-            // 5. Backend
-            let firstTwoBackend = 0, restBackend = 0;
-            firstTwo.forEach(p => p.blocks.forEach(b => firstTwoBackend += b.backend));
-            restPages.forEach(p => p.blocks.forEach(b => restBackend += b.backend));
-
+            // ── 5. Back-end ───────────────────────────────────────────────
+            const beSetup    = fix('backendSetup');
+            const beInternal = pct(blocksTotal.backend, 'backendOperations')
+                             + pct(blocksTotal.backend, 'backendReview')
+                             + pct(blocksTotal.backend, 'backendBugs');
             tasks.push({ name: '5. Back-end', hours: 0, isSection: true });
-            tasks.push({ name: 'Back-end главной и одной внутренней', hours: Math.round(firstTwoBackend), parentSection: '5. Back-end' });
+            if (beSetup > 0) {
+                tasks.push({ name: 'Разворачивание проекта', hours: beSetup });
+            }
+            if (firstTwoBackend > 0) {
+                tasks.push({ name: 'Back-end главной и одной внутренней', hours: Math.round(firstTwoBackend) + (restBackend === 0 ? beInternal : 0) });
+            }
             if (restBackend > 0) {
-                tasks.push({ name: 'Back-end внутренних страниц', hours: Math.round(restBackend), parentSection: '5. Back-end' });
+                tasks.push({ name: 'Back-end внутренних страниц', hours: Math.round(restBackend) + beInternal });
             }
-            if (!isDisabled('fixed', 'backendSetup')) {
-                tasks.push({ name: 'Разворачивание проекта', hours: Math.round(state.fixedValues.backendSetup), parentSection: '5. Back-end' });
+            const beMultilang = fix('backendMultilang') + fix('backendMultilangFront');
+            if (beMultilang > 0) {
+                tasks.push({ name: 'Мультиязычность', hours: beMultilang });
             }
-            if (!isDisabled('percentages', 'backendOperations')) {
-                tasks.push({ name: 'Операционка', hours: Math.round(blocksTotal.backend * state.percentages.backendOperations / 100), parentSection: '5. Back-end' });
-            }
-            if (!isDisabled('percentages', 'backendReview')) {
-                tasks.push({ name: 'Ревью и курирование', hours: Math.round(blocksTotal.backend * state.percentages.backendReview / 100), parentSection: '5. Back-end' });
-            }
-            if (!isDisabled('percentages', 'backendBugs')) {
-                tasks.push({ name: 'Правка багов', hours: Math.round(blocksTotal.backend * state.percentages.backendBugs / 100), parentSection: '5. Back-end' });
-            }
-            if (!isDisabled('fixed', 'backendMultilang')) {
-                tasks.push({ name: 'Мультиязычность', hours: Math.round(state.fixedValues.backendMultilang + state.fixedValues.backendMultilangFront), parentSection: '5. Back-end' });
-            }
-            if (!isDisabled('fixed', 'backendSearch')) {
-                tasks.push({ name: 'Базовый поиск', hours: Math.round(state.fixedValues.backendSearch + state.fixedValues.backendSearchFront), parentSection: '5. Back-end' });
+            const beSearch = fix('backendSearch') + fix('backendSearchFront');
+            if (beSearch > 0) {
+                tasks.push({ name: 'Базовый поиск', hours: beSearch });
             }
 
-            // 6. Тестирование
-            let firstTwoTest = 0, restTest = 0;
-            firstTwo.forEach(p => p.blocks.forEach(b => firstTwoTest += b.test));
-            restPages.forEach(p => p.blocks.forEach(b => restTest += b.test));
-
+            // ── 6. Тестирование ───────────────────────────────────────────
+            // Операционка → суммируется в тестирование страниц
+            const testOps = pct(blocksTotal.test, 'testingOperations');
+            const testProd = pct(blocksTotal.test, 'testingProd');
             tasks.push({ name: '6. Тестирование', hours: 0, isSection: true });
-            tasks.push({ name: 'Тестирование главной и одной внутренней', hours: Math.round(firstTwoTest), parentSection: '6. Тестирование' });
+            if (firstTwoTest > 0) {
+                tasks.push({ name: 'Тестирование главной и одной внутренней', hours: Math.round(firstTwoTest) + (restTest === 0 ? testOps : 0) });
+            }
             if (restTest > 0) {
-                tasks.push({ name: 'Тестирование внутренних страниц', hours: Math.round(restTest), parentSection: '6. Тестирование' });
+                tasks.push({ name: 'Тестирование внутренних страниц', hours: Math.round(restTest) + testOps });
             }
-            if (!isDisabled('percentages', 'testingOperations')) {
-                tasks.push({ name: 'Операционка', hours: Math.round(blocksTotal.test * state.percentages.testingOperations / 100), parentSection: '6. Тестирование' });
+            if (testProd > 0) {
+                tasks.push({ name: 'Тестирование на продовом сервере', hours: testProd });
             }
-            if (!isDisabled('percentages', 'testingProd')) {
-                tasks.push({ name: 'Тестирование на проде', hours: Math.round(blocksTotal.test * state.percentages.testingProd / 100), parentSection: '6. Тестирование' });
+            const testArtifacts = fix('testingArtifacts') + fix('testingPrototypes') + fix('testingDesign');
+            if (testArtifacts > 0) {
+                tasks.push({ name: 'Отсмотр артефактов и макетов', hours: testArtifacts });
             }
-            if (!isDisabled('fixed', 'testingArtifacts')) {
-                tasks.push({ name: 'Отсмотр артефактов', hours: Math.round(state.fixedValues.testingArtifacts), parentSection: '6. Тестирование' });
-            }
-            if (!isDisabled('fixed', 'testingPrototypes')) {
-                tasks.push({ name: 'Отсмотр прототипов', hours: Math.round(state.fixedValues.testingPrototypes), parentSection: '6. Тестирование' });
-            }
-            if (!isDisabled('fixed', 'testingDesign')) {
-                tasks.push({ name: 'Отсмотр дизайн-макетов', hours: Math.round(state.fixedValues.testingDesign), parentSection: '6. Тестирование' });
-            }
-            if (!isDisabled('fixed', 'testingPerformance')) {
-                tasks.push({ name: 'Тестирование производительности', hours: Math.round(state.fixedValues.testingPerformance), parentSection: '6. Тестирование' });
-            }
-            if (!isDisabled('fixed', 'testingContent')) {
-                tasks.push({ name: 'Тестирование с контентом', hours: Math.round(state.fixedValues.testingContent), parentSection: '6. Тестирование' });
+            const testOther = fix('testingPerformance') + fix('testingContent');
+            if (testOther > 0) {
+                tasks.push({ name: 'Нагрузочное тестирование и контент', hours: testOther });
             }
 
-            // 7. Контент
+            // ── 7. Контент ────────────────────────────────────────────────
+            // Написание ТЗ перенесено в раздел 2. Проектирование
             tasks.push({ name: '7. Контент', hours: 0, isSection: true });
-            if (!isDisabled('fixed', 'contentFill')) {
-                tasks.push({ name: 'Наполнение контентом', hours: Math.round(state.fixedValues.contentFill), parentSection: '7. Контент' });
+            if (fix('contentFill') > 0) {
+                tasks.push({ name: 'Наполнение сайта контентом', hours: fix('contentFill') });
             }
-            if (!isDisabled('fixed', 'contentInstruction')) {
-                tasks.push({ name: 'Инструкция для контент-менеджера', hours: Math.round(state.fixedValues.contentInstruction), parentSection: '7. Контент' });
-            }
-            if (!isDisabled('fixed', 'contentTZ')) {
-                tasks.push({ name: 'Написание ТЗ', hours: Math.round(state.fixedValues.contentTZ), parentSection: '7. Контент' });
+            if (fix('contentInstruction') > 0) {
+                tasks.push({ name: 'Инструкция для контент-менеджера', hours: fix('contentInstruction') });
             }
 
-            // Отправляем на сервер
+            // ── Build XLSX via SheetJS ────────────────────────────────────
             try {
-                const btn = event.target;
-                btn.disabled = true;
-                btn.textContent = 'Отправка...';
+                const approvalAfter = new Set([
+                    'Проектирование структуры сайта',
+                    'Прототип главной и одной внутренней',
+                    'Прототип внутренних страниц',
+                    'Дизайн главной и одной внутренней',
+                    'Дизайн внутренних страниц',
+                    'Анимации страниц',
+                    'Front-end главной и одной внутренней',
+                    'Back-end внутренних страниц',
+                    'Нагрузочное тестирование и контент',
+                ]);
 
-                const response = await fetch(GANTTPRO_API_URL + '/api/ganttpro', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ projectName, tasks })
+                const rows = [];
+                let s = 0, sub = {};
+                tasks.forEach(t => {
+                    if (t.isSection) {
+                        s++;
+                        sub[s] = 0;
+                        const sectionIdx = tasks.indexOf(t);
+                        let total = 0;
+                        for (let i = sectionIdx + 1; i < tasks.length; i++) {
+                            if (tasks[i].isSection) break;
+                            total += tasks[i].hours || 0;
+                            if (approvalAfter.has(tasks[i].name)) total += 24;
+                        }
+                        rows.push({ wbs: String(s), name: t.name, hours: total, isSection: true });
+                    } else {
+                        sub[s] = (sub[s] || 0) + 1;
+                        rows.push({ wbs: `${s}.${sub[s]}`, name: t.name, hours: t.hours || 0, isSection: false });
+                        if (approvalAfter.has(t.name)) {
+                            sub[s]++;
+                            rows.push({ wbs: `${s}.${sub[s]}`, name: 'Согласование', hours: 24, isSection: false });
+                        }
+                    }
                 });
 
-                const result = await response.json();
+                // Assign predecessors
+                const crossPreds = {
+                    '3.1': '2.5',
+                    '4.1': '3.4',
+                    '5.1': '',
+                    '5.2': '5.1',
+                    '5.3': '5.2',
+                    '5.4': '5.3',
+                    '5.5': '5.3',
+                    '5.6': '5.4',
+                    '6.1': '4.1',
+                    '7.1': '5.2',
+                };
+                const wbsSet = new Set(rows.map(r => r.wbs));
+                rows.forEach(row => {
+                    if (row.isSection) { row.pred = ''; return; }
+                    const sec = row.wbs.split('.')[0];
+                    const subN = parseInt(row.wbs.split('.')[1]);
+                    if (crossPreds.hasOwnProperty(row.wbs)) {
+                        row.pred = crossPreds[row.wbs];
+                    } else if (subN > 1) {
+                        row.pred = `${sec}.${subN - 1}`;
+                    } else {
+                        row.pred = '';
+                    }
+                    if (row.pred && !wbsSet.has(row.pred)) row.pred = '';
+                });
 
-                if (result.success) {
-                    alert(`✅ Проект "${projectName}" успешно создан в GanttPro!\n\nСоздано задач: ${result.tasksCreated}`);
-                } else {
-                    alert('❌ Ошибка: ' + (result.error || 'Неизвестная ошибка'));
-                }
+                const wsData = [];
+                rows.forEach(row => {
+                    wsData.push([
+                        row.name,
+                        row.hours > 0 ? row.hours : 1,
+                        row.wbs,
+                        row.pred || ''
+                    ]);
+                });
 
-                btn.disabled = false;
-                btn.textContent = 'GanttPro';
-            } catch (error) {
-                alert('❌ Ошибка подключения: ' + error.message + '\n\nПроверьте URL сервера.');
-                event.target.disabled = false;
-                event.target.textContent = 'GanttPro';
-            }
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                ws['!cols'] = [{ wch: 56 }, { wch: 12 }, { wch: 10 }, { wch: 12 }];
+                XLSX.utils.book_append_sheet(wb, ws, 'Project');
+                const safeProjectName = projectName.replace(/[^\wА-яЁё\s\-]/gi, '').trim() || 'ganttpro_export';
+                XLSX.writeFile(wb, safeProjectName + '_GanttPRO.xlsx');
+                showSuccess('Файл скачан! В GanttPRO: + → Импорт → загрузить файл → Начать импорт.');
+
+            } catch (err) {
+                showError('Ошибка создания файла GanttPRO', err.message);
+
         }
 
         // ==================== ADMIN PANEL FUNCTIONS ====================
