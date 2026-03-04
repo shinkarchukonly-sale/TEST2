@@ -1910,17 +1910,17 @@
                         </div>
                         <div class="page-content ${page.expanded ? 'expanded' : ''}">
                             ${page.blocks.length === 0 ? '<div class="empty-state">Нет блоков. Нажмите "+ Блок" чтобы добавить.</div>' : `
-                                <table>
+                                <table style="table-layout:fixed;width:100%;">
                                     <thead>
                                         <tr>
-                                            <th>Название блока</th>
-                                            <th class="text-right">Аналитика</th>
-                                            <th class="text-right">Дизайн</th>
-                                            <th class="text-right">Front-end</th>
-                                            <th class="text-right">Back-end</th>
-                                            <th class="text-right">Test</th>
-                                            <th class="text-right">Итого</th>
-                                            <th></th>
+                                            <th style="width:auto;">Название блока</th>
+                                            <th class="text-right" style="width:80px;">Аналитика</th>
+                                            <th class="text-right" style="width:70px;">Дизайн</th>
+                                            <th class="text-right" style="width:80px;">Front-end</th>
+                                            <th class="text-right" style="width:80px;">Back-end</th>
+                                            <th class="text-right" style="width:60px;">Test</th>
+                                            <th class="text-right" style="width:65px;">Итого</th>
+                                            <th style="width:36px;"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1936,13 +1936,13 @@
                                                     ondragover="onPageBlockDragOver(event)"
                                                     ondrop="onPageBlockDrop(event)"
                                                     ondragend="onPageBlockDragEnd(event)">
-                                                    <td>
-                                                        <div style="display:flex;align-items:center;gap:6px;">
-                                                            <span class="drag-handle" title="Перетащить">
+                                                    <td style="word-break:break-word;">
+                                                        <div style="display:flex;align-items:flex-start;gap:6px;">
+                                                            <span class="drag-handle" title="Перетащить" style="flex-shrink:0;margin-top:2px;">
                                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
                                                             </span>
                                                             <div>
-                                                                <div>${block.name}</div>
+                                                                <div style="white-space:normal;word-break:break-word;">${block.name}</div>
                                                                 <span class="badge ${badgeClass}">${badgeText}</span>
                                                             </div>
                                                         </div>
@@ -3162,7 +3162,7 @@
                             ${isActive ? '<span style="color:#3B82F6;font-weight:600;">● Открыт сейчас</span>' : ''}
                         </div>
                     </div>
-                    <div class="project-stats">
+                    <div class="project-stats" style="display:none">
                         <div class="project-stat">
                             <div class="project-stat-value">${t.pages}</div>
                             <div class="project-stat-label">страниц</div>
