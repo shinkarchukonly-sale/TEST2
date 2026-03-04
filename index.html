@@ -3410,26 +3410,35 @@
             // Анимации главной + внутренних → «Анимации страниц»
             // UI-kit главной + общий → «UI-kit»
             const designOps = pct(blocksTotal.design, 'designOperations');
+            const designUsedBlocksExp = pct(blocksTotal.design, 'designUsedBlocks');
+            const designBeforeSupExp = blocksTotal.design + designOps
+                + fix('designAnimMain') + fix('designAnimInner')
+                + fix('designAdaptMain') + fix('designAdaptAll')
+                + fix('designUIKitMain') + pct(blocksTotal.design, 'designUIKit')
+                + designUsedBlocksExp;
+            const designSupervisionExp = Math.round(designBeforeSupExp * (state.percentages.designSupervision / 100));
+
             tasks.push({ name: '3. Дизайн', hours: 0, isSection: true });
             if (firstTwoDesign > 0) {
-                tasks.push({ name: 'Дизайн главной и одной внутренней', hours: Math.round(firstTwoDesign) + (restDesign === 0 ? designOps : 0) });
+                tasks.push({ name: 'Дизайн главной и одной внутренней', hours: Math.round(firstTwoDesign) + (restDesign === 0 ? designOps + designUsedBlocksExp : 0) });
             }
             if (restDesign > 0) {
-                tasks.push({ name: 'Дизайн внутренних страниц', hours: Math.round(restDesign) + designOps });
+                tasks.push({ name: 'Дизайн внутренних страниц', hours: Math.round(restDesign) + designOps + designUsedBlocksExp });
             }
             const designAdaptMain = fix('designAdaptMain'), designAdaptAll = fix('designAdaptAll');
             if (designAdaptMain > 0 || designAdaptAll > 0) {
                 tasks.push({ name: 'Адаптивная вёрстка макетов', hours: designAdaptMain + designAdaptAll });
             }
-            // Анимации страниц = главная + внутренние
             const designAnimTotal = fix('designAnimMain') + fix('designAnimInner');
             if (designAnimTotal > 0) {
                 tasks.push({ name: 'Анимации страниц', hours: designAnimTotal });
             }
-            // UI-kit = главная + общий
             const designUIKitTotal = fix('designUIKitMain') + pct(blocksTotal.design, 'designUIKit');
             if (designUIKitTotal > 0) {
                 tasks.push({ name: 'UI-kit', hours: designUIKitTotal });
+            }
+            if (designSupervisionExp > 0) {
+                tasks.push({ name: 'Авторский надзор', hours: designSupervisionExp });
             }
 
             // ── 4. Front-end ──────────────────────────────────────────────
@@ -3439,7 +3448,8 @@
             const feInternal = pct(blocksTotal.frontend, 'frontendOperations')
                              + fix('frontendPrototypes')
                              + pct(blocksTotal.frontend, 'frontendReview')
-                             + pct(blocksTotal.frontend, 'frontendBugs');
+                             + pct(blocksTotal.frontend, 'frontendBugs')
+                             + pct(blocksTotal.frontend, 'frontendIntegration');
             tasks.push({ name: '4. Front-end', hours: 0, isSection: true });
             if (feSetup > 0) {
                 tasks.push({ name: 'Разворачивание проекта', hours: feSetup });
