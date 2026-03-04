@@ -3597,13 +3597,26 @@
                     }
                 });
 
+                const sectionAssignee = {
+                    '1': 'Аналитик M',
+                    '2': 'Аналитик M',
+                    '3': 'Дизайнер M',
+                    '4': 'Front-end M',
+                    '5': 'Back-end M',
+                    '6': 'QA',
+                    '7': 'Контент-менеджер',
+                };
+
                 const wsData = [];
                 rows.forEach(row => {
+                    const sec = row.wbs.split('.')[0];
+                    const assignee = row.isSection ? '' : (sectionAssignee[sec] || '');
                     wsData.push([
                         row.name,
                         row.hours > 0 ? row.hours : 1,
                         row.wbs,
-                        row.pred || ''
+                        row.pred || '',
+                        assignee
                     ]);
                 });
 
@@ -3616,6 +3629,7 @@
                     { wch: 12 }, // Duration
                     { wch: 10 }, // WBS
                     { wch: 12 }, // Predecessor
+                    { wch: 14 }, // Assignee
                 ];
 
                 XLSX.utils.book_append_sheet(wb, ws, 'Project');
