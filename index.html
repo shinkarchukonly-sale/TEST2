@@ -2688,14 +2688,76 @@
 
         function calcProjectTotals(snapshot) {
             if (!snapshot || !snapshot.pages) return { hours: 0, pages: 0, blocks: 0 };
-            let hours = 0, blockCount = 0;
-            snapshot.pages.forEach(p => {
-                blockCount += p.blocks.length;
-                p.blocks.forEach(b => {
-                    hours += (b.analytics||0) + (b.design||0) + (b.frontend||0) + (b.backend||0) + (b.test||0);
+
+            const pct  = snapshot.percentages  || {};
+            const fix  = snapshot.fixedValues  || {};
+            const cw   = snapshot.customWorks  || {};
+            const dw   = snapshot.disabledWorks || { percentages: [], fixed: [] };
+
+            const isDisabledPct = k => (dw.percentages || []).includes(k);
+            const isDisabledFix = k => (dw.fixed || []).includes(k);
+            const p = (base, key) => isDisabledPct(key) ? 0 : Math.round(base * (pct[key] || 0) / 100);
+            const f = key => isDisabledFix(key) ? 0 : Math.round(fix[key] || 0);
+
+            let blockCount = 0;
+            const bt = { a: 0, d: 0, fe: 0, be: 0, t: 0 };
+            snapshot.pages.forEach(pg => {
+                blockCount += pg.blocks.length;
+                pg.blocks.forEach(b => {
+                    bt.a  += b.analytics || 0;
+                    bt.d  += b.design    || 0;
+                    bt.fe += b.frontend  || 0;
+                    bt.be += b.backend   || 0;
+                    bt.t  += b.test      || 0;
                 });
             });
-            return { hours: Math.round(hours), pages: snapshot.pages.length, blocks: blockCount };
+
+            // Fixed works (same logic as calculateTotals)
+            const analyticsFix = p(bt.a,'analyticsCuration') + p(bt.a,'analyticsOperations') + p(bt.a,'analyticsPreparation')
+                + f('analyticsBenchmark') + f('analyticsBrief') + f('analyticsRequirements') + f('analyticsStructure');
+
+            const designBeforeSup = bt.d + p(bt.d,'designOperations') + p(bt.d,'designUIKit') + p(bt.d,'designUsedBlocks')
+                + f('designAnimMain') + f('designAnimInner') + f('designAdaptMain') + f('designAdaptAll') + f('designUIKitMain');
+            const designFix = designBeforeSup + Math.round(designBeforeSup * (pct.designSupervision||0) / 100);
+
+            const frontendFix = f('frontendSetup') + f('frontendPrototypes')
+                + p(bt.fe,'frontendOperations') + p(bt.fe,'frontendReview')
+                + p(bt.fe,'frontendBugs') + p(bt.fe,'frontendIntegration')
+                + f('frontendAnimMain') + f('frontendAnimInner')
+                + f('backendMultilangFront') + f('backendSearchFront');
+
+            const backendFix = f('backendSetup') + p(bt.be,'backendOperations')
+                + p(bt.be,'backendReview') + p(bt.be,'backendBugs')
+                + f('backendMultilang') + f('backendSearch');
+
+            const testFix = p(bt.t,'testingOperations') + p(bt.t,'testingProd')
+                + f('testingArtifacts') + f('testingPrototypes') + f('testingDesign')
+                + f('testingPerformance') + f('testingContent');
+
+            const contentFix = f('contentFill') + f('contentInstruction') + 8;
+
+            // Custom works
+            let cwA=0, cwD=0, cwFE=0, cwBE=0, cwT=0, cwC=0;
+            (cw.analytics||[]).forEach(w => cwA += w.hours||0);
+            (cw.design||[]).forEach(w => cwD += w.hours||0);
+            (cw.frontend||[]).forEach(w => cwFE += w.hours||0);
+            (cw.backend||[]).forEach(w => cwBE += w.hours||0);
+            (cw.testing||[]).forEach(w => cwT += w.hours||0);
+            (cw.content||[]).forEach(w => cwC += w.hours||0);
+            (cw.integrations||[]).forEach(w => cwBE += w.hours||0);
+
+            // Content TZ distributed
+            const tzExtra = f('contentTZ') > 0 ? 4 + 8 + 8 + 4 : 0;
+
+            const total = (bt.a + analyticsFix + cwA + 4)
+                        + (bt.d + designFix + cwD)
+                        + (bt.fe + frontendFix + cwFE + 8)
+                        + (bt.be + backendFix + cwBE + 8)
+                        + (bt.t + testFix + cwT + 4)
+                        + (contentFix + cwC)
+                        + f('contentTZ');
+
+            return { hours: Math.round(total), pages: snapshot.pages.length, blocks: blockCount };
         }
 
         function updateProjectsCount() {
