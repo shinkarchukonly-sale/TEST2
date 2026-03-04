@@ -2946,6 +2946,18 @@
             renderFixedWorks();
             setTimeout(() => {
                 calculateTotals();
+                // Пересохраняем snapshot с округлёнными значениями
+                const rounded = getStateSnapshot();
+                const proj = projects.find(p => p.id === currentProjectId);
+                if (proj) {
+                    proj.snapshot = rounded;
+                    proj.totals = calcProjectTotals(rounded);
+                    renderProjectsList && renderProjectsList();
+                }
+                sbFetch('PATCH', TABLE + '?id=eq.' + currentProjectId, {
+                    snapshot: rounded,
+                    updated_at: new Date().toISOString()
+                }).catch(() => {});
             }, 150);
             updateCurrentProjectLabel();
         }
@@ -3714,10 +3726,11 @@
                 const wsData = [];
                 rows.forEach(row => {
                     const sec = row.wbs.split('.')[0];
-                    const assignee = row.isSection ? '' : (sectionAssignee[sec] || '');
+                    const isSection = !row.wbs.includes('.');
+                    const assignee = isSection ? '' : (sectionAssignee[sec] || '');
                     wsData.push([
                         row.name,
-                        row.hours > 0 ? row.hours : 1,
+                        isSection ? '' : (row.hours > 0 ? row.hours : 1),
                         row.wbs,
                         row.pred || '',
                         assignee
