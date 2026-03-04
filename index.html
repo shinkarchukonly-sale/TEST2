@@ -1842,8 +1842,13 @@
             
             page.blocks.push({
                 id: Date.now(),
-                ...blockData,
-                difficulty
+                name: blockData.name,
+                analytics: Math.round(blockData.analytics || 0),
+                design: Math.round(blockData.design || 0),
+                frontend: Math.round(blockData.frontend || 0),
+                backend: Math.round(blockData.backend || 0),
+                test: Math.round(blockData.test || 0),
+                difficulty: blockData.difficulty || difficulty
             });
             
             closeBlockModal();
@@ -2537,7 +2542,17 @@
                     const loaded = JSON.parse(saved);
                     // Only load pages if they exist
                     if (loaded.pages && loaded.pages.length > 0) {
-                        state.pages = loaded.pages;
+                        state.pages = loaded.pages.map(page => ({
+                            ...page,
+                            blocks: (page.blocks || []).map(b => ({
+                                ...b,
+                                analytics: Math.round(b.analytics || 0),
+                                design:    Math.round(b.design    || 0),
+                                frontend:  Math.round(b.frontend  || 0),
+                                backend:   Math.round(b.backend   || 0),
+                                test:      Math.round(b.test      || 0),
+                            }))
+                        }));
                     }
                     // Merge percentages
                     if (loaded.percentages) {
@@ -2904,7 +2919,20 @@
             if (!proj) return;
             currentProjectId = id;
             const s = proj.snapshot;
-            if (s.pages) state.pages = s.pages;
+            if (s.pages) {
+                // Округляем все значения блоков до целых при загрузке
+                state.pages = s.pages.map(page => ({
+                    ...page,
+                    blocks: (page.blocks || []).map(b => ({
+                        ...b,
+                        analytics: Math.round(b.analytics || 0),
+                        design:    Math.round(b.design    || 0),
+                        frontend:  Math.round(b.frontend  || 0),
+                        backend:   Math.round(b.backend   || 0),
+                        test:      Math.round(b.test      || 0),
+                    }))
+                }));
+            }
             if (s.percentages) Object.assign(state.percentages, s.percentages);
             if (s.fixedValues) Object.assign(state.fixedValues, s.fixedValues);
             if (s.integrations) Object.assign(state.integrations, s.integrations);
