@@ -2344,10 +2344,12 @@
             const designOperations = blocksTotal.design * (state.percentages.designOperations / 100);
             const designUIKit = blocksTotal.design * (state.percentages.designUIKit / 100);
             const designUsedBlocks = blocksTotal.design * (state.percentages.designUsedBlocks / 100);
+            // designBeforeSupervision включает blocksTotal только для расчёта % надзора
             const designBeforeSupervision = blocksTotal.design + designOperations + state.fixedValues.designAnimMain + state.fixedValues.designAnimInner + state.fixedValues.designAdaptMain + state.fixedValues.designAdaptAll + state.fixedValues.designUIKitMain + designUIKit + designUsedBlocks;
             const designSupervision = designBeforeSupervision * (state.percentages.designSupervision / 100);
             
-            fixedWorks.design = designBeforeSupervision + designSupervision;
+            // fixedWorks.design = только РАБОТЫ (без blocksTotal.design — он добавится в totalWithWorks)
+            fixedWorks.design = designOperations + state.fixedValues.designAnimMain + state.fixedValues.designAnimInner + state.fixedValues.designAdaptMain + state.fixedValues.designAdaptAll + state.fixedValues.designUIKitMain + designUIKit + designUsedBlocks + designSupervision;
 
             setText('designOperations', designOperations.toFixed(0));
             setText('designUIKit', designUIKit.toFixed(0));
@@ -2718,7 +2720,9 @@
 
             const designBeforeSup = bt.d + p(bt.d,'designOperations') + p(bt.d,'designUIKit') + p(bt.d,'designUsedBlocks')
                 + f('designAnimMain') + f('designAnimInner') + f('designAdaptMain') + f('designAdaptAll') + f('designUIKitMain');
-            const designFix = designBeforeSup + Math.round(designBeforeSup * (pct.designSupervision||0) / 100);
+            const designFix = p(bt.d,'designOperations') + p(bt.d,'designUIKit') + p(bt.d,'designUsedBlocks')
+                + f('designAnimMain') + f('designAnimInner') + f('designAdaptMain') + f('designAdaptAll') + f('designUIKitMain')
+                + Math.round(designBeforeSup * (pct.designSupervision||0) / 100);
 
             const frontendFix = f('frontendSetup') + f('frontendPrototypes')
                 + p(bt.fe,'frontendOperations') + p(bt.fe,'frontendReview')
