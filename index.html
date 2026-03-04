@@ -2270,6 +2270,8 @@
 
         // Calculate totals
         function calculateTotals() {
+          // Safe helper — не падает если элемент ещё не в DOM
+          const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
           try {
             // 1. Calculate blocks total
             const blocksTotal = {
@@ -2293,12 +2295,12 @@
             const blocksTotalSum = blocksTotal.analytics + blocksTotal.design + blocksTotal.frontend + blocksTotal.backend + blocksTotal.test;
 
             // Update blocks total display
-            document.getElementById('totalBlocksAnalytics').textContent = blocksTotal.analytics.toFixed(0);
-            document.getElementById('totalBlocksDesign').textContent = blocksTotal.design.toFixed(0);
-            document.getElementById('totalBlocksFrontend').textContent = blocksTotal.frontend.toFixed(0);
-            document.getElementById('totalBlocksBackend').textContent = blocksTotal.backend.toFixed(0);
-            document.getElementById('totalBlocksTest').textContent = blocksTotal.test.toFixed(0);
-            document.getElementById('totalBlocksTotal').textContent = blocksTotalSum.toFixed(0);
+            setText('totalBlocksAnalytics', blocksTotal.analytics.toFixed(0));
+            setText('totalBlocksDesign', blocksTotal.design.toFixed(0));
+            setText('totalBlocksFrontend', blocksTotal.frontend.toFixed(0));
+            setText('totalBlocksBackend', blocksTotal.backend.toFixed(0));
+            setText('totalBlocksTest', blocksTotal.test.toFixed(0));
+            setText('totalBlocksTotal', blocksTotalSum.toFixed(0));
 
             // Calculate first two pages total
             const firstTwo = state.pages.slice(0, 2);
@@ -2310,12 +2312,12 @@
                 ft.backend += b.backend;
                 ft.test += b.test;
             }));
-            document.getElementById('firstTwoPagesAnalytics').textContent = ft.analytics.toFixed(0);
-            document.getElementById('firstTwoPagesDesign').textContent = ft.design.toFixed(0);
-            document.getElementById('firstTwoPagesFrontend').textContent = ft.frontend.toFixed(0);
-            document.getElementById('firstTwoPagesBackend').textContent = ft.backend.toFixed(0);
-            document.getElementById('firstTwoPagesTest').textContent = ft.test.toFixed(0);
-            document.getElementById('firstTwoPagesTotal').textContent = (ft.analytics + ft.design + ft.frontend + ft.backend + ft.test).toFixed(0);
+            setText('firstTwoPagesAnalytics', ft.analytics.toFixed(0));
+            setText('firstTwoPagesDesign', ft.design.toFixed(0));
+            setText('firstTwoPagesFrontend', ft.frontend.toFixed(0));
+            setText('firstTwoPagesBackend', ft.backend.toFixed(0));
+            setText('firstTwoPagesTest', ft.test.toFixed(0));
+            setText('firstTwoPagesTotal', (ft.analytics + ft.design + ft.frontend + ft.backend + ft.test).toFixed(0));
 
             // 2. Calculate fixed works
             const fixedWorks = {
@@ -2334,9 +2336,9 @@
             
             fixedWorks.analytics = analyticsCuration + analyticsOperations + state.fixedValues.analyticsBenchmark + state.fixedValues.analyticsBrief + state.fixedValues.analyticsRequirements + state.fixedValues.analyticsStructure + analyticsPreparation;
 
-            document.getElementById('analyticsCuration').textContent = analyticsCuration.toFixed(0);
-            document.getElementById('analyticsOperations').textContent = analyticsOperations.toFixed(0);
-            document.getElementById('analyticsPreparation').textContent = analyticsPreparation.toFixed(0);
+            setText('analyticsCuration', analyticsCuration.toFixed(0));
+            setText('analyticsOperations', analyticsOperations.toFixed(0));
+            setText('analyticsPreparation', analyticsPreparation.toFixed(0));
 
             // Design works
             const designOperations = blocksTotal.design * (state.percentages.designOperations / 100);
@@ -2347,10 +2349,10 @@
             
             fixedWorks.design = designBeforeSupervision + designSupervision;
 
-            document.getElementById('designOperations').textContent = designOperations.toFixed(0);
-            document.getElementById('designUIKit').textContent = designUIKit.toFixed(0);
-            document.getElementById('designUsedBlocks').textContent = designUsedBlocks.toFixed(0);
-            document.getElementById('designSupervision').textContent = designSupervision.toFixed(0);
+            setText('designOperations', designOperations.toFixed(0));
+            setText('designUIKit', designUIKit.toFixed(0));
+            setText('designUsedBlocks', designUsedBlocks.toFixed(0));
+            setText('designSupervision', designSupervision.toFixed(0));
 
             // Frontend works
             const frontendOperations = blocksTotal.frontend * (state.percentages.frontendOperations / 100);
@@ -2360,10 +2362,10 @@
             
             fixedWorks.frontend = state.fixedValues.frontendSetup + state.fixedValues.frontendPrototypes + frontendOperations + frontendReview + frontendBugs + state.fixedValues.frontendAnimMain + state.fixedValues.frontendAnimInner + frontendIntegration;
 
-            document.getElementById('frontendOperations').textContent = frontendOperations.toFixed(0);
-            document.getElementById('frontendReview').textContent = frontendReview.toFixed(0);
-            document.getElementById('frontendBugs').textContent = frontendBugs.toFixed(0);
-            document.getElementById('frontendIntegration').textContent = frontendIntegration.toFixed(0);
+            setText('frontendOperations', frontendOperations.toFixed(0));
+            setText('frontendReview', frontendReview.toFixed(0));
+            setText('frontendBugs', frontendBugs.toFixed(0));
+            setText('frontendIntegration', frontendIntegration.toFixed(0));
 
             // Backend works
             const backendOperations = blocksTotal.backend * (state.percentages.backendOperations / 100);
@@ -2373,9 +2375,9 @@
             fixedWorks.backend = state.fixedValues.backendSetup + backendOperations + backendReview + backendBugs + state.fixedValues.backendMultilang + state.fixedValues.backendSearch;
             fixedWorks.frontend += state.fixedValues.backendMultilangFront + state.fixedValues.backendSearchFront;
 
-            document.getElementById('backendOperations').textContent = backendOperations.toFixed(0);
-            document.getElementById('backendReview').textContent = backendReview.toFixed(0);
-            document.getElementById('backendBugs').textContent = backendBugs.toFixed(0);
+            setText('backendOperations', backendOperations.toFixed(0));
+            setText('backendReview', backendReview.toFixed(0));
+            setText('backendBugs', backendBugs.toFixed(0));
 
             // Integrations
             if (state.integrations.crm) {
@@ -2424,8 +2426,8 @@
             
             fixedWorks.test += testingOperations + testingProd + state.fixedValues.testingArtifacts + state.fixedValues.testingPrototypes + state.fixedValues.testingDesign + state.fixedValues.testingPerformance + state.fixedValues.testingContent;
 
-            document.getElementById('testingOperations').textContent = testingOperations.toFixed(0);
-            document.getElementById('testingProd').textContent = testingProd.toFixed(0);
+            setText('testingOperations', testingOperations.toFixed(0));
+            setText('testingProd', testingProd.toFixed(0));
 
             // Content works
             fixedWorks.content = state.fixedValues.contentFill + state.fixedValues.contentInstruction + 8;
@@ -2457,19 +2459,20 @@
 
             const totalWithWorksSum = totalWithWorks.analytics + totalWithWorks.design + totalWithWorks.frontend + totalWithWorks.backend + totalWithWorks.test + totalWithWorks.content;
 
-            document.getElementById('totalWithWorksAnalytics').textContent = totalWithWorks.analytics.toFixed(0);
-            document.getElementById('totalWithWorksDesign').textContent = totalWithWorks.design.toFixed(0);
-            document.getElementById('totalWithWorksFrontend').textContent = totalWithWorks.frontend.toFixed(0);
-            document.getElementById('totalWithWorksBackend').textContent = totalWithWorks.backend.toFixed(0);
-            document.getElementById('totalWithWorksTest').textContent = totalWithWorks.test.toFixed(0);
-            document.getElementById('totalWithWorksContent').textContent = totalWithWorks.content.toFixed(0);
-            document.getElementById('totalWithWorksTotal').textContent = totalWithWorksSum.toFixed(0);
+            setText('totalWithWorksAnalytics', totalWithWorks.analytics.toFixed(0));
+            setText('totalWithWorksDesign', totalWithWorks.design.toFixed(0));
+            setText('totalWithWorksFrontend', totalWithWorks.frontend.toFixed(0));
+            setText('totalWithWorksBackend', totalWithWorks.backend.toFixed(0));
+            setText('totalWithWorksTest', totalWithWorks.test.toFixed(0));
+            setText('totalWithWorksContent', totalWithWorks.content.toFixed(0));
+            setText('totalWithWorksTotal', totalWithWorksSum.toFixed(0));
 
             // 4. Apply modifiers
-            const upsaleHours = parseFloat(document.getElementById('upsaleHours').value) || 0;
-            const clientComplexity = parseFloat(document.querySelector('input[name="clientComplexity"]:checked').value) || 0;
-            const internalGoals = parseFloat(document.querySelector('input[name="internalGoals"]:checked').value) || 0;
-            const mvp = parseFloat(document.querySelector('input[name="mvp"]:checked').value) || 0;
+            const upsaleEl = document.getElementById('upsaleHours');
+            const upsaleHours = upsaleEl ? (parseFloat(upsaleEl.value) || 0) : 0;
+            const clientComplexity = parseFloat(document.querySelector('input[name="clientComplexity"]:checked')?.value) || 0;
+            const internalGoals = parseFloat(document.querySelector('input[name="internalGoals"]:checked')?.value) || 0;
+            const mvp = parseFloat(document.querySelector('input[name="mvp"]:checked')?.value) || 0;
 
             const percentageModifier = 1 + (clientComplexity / 100) + (internalGoals / 100) + (mvp / 100);
 
@@ -2484,27 +2487,28 @@
 
             const totalModifiedSum = totalModified.analytics + totalModified.design + totalModified.frontend + totalModified.backend + totalModified.test + totalModified.content + upsaleHours;
 
-            document.getElementById('totalModifiedAnalytics').textContent = totalModified.analytics.toFixed(0);
-            document.getElementById('totalModifiedDesign').textContent = totalModified.design.toFixed(0);
-            document.getElementById('totalModifiedFrontend').textContent = totalModified.frontend.toFixed(0);
-            document.getElementById('totalModifiedBackend').textContent = totalModified.backend.toFixed(0);
-            document.getElementById('totalModifiedTest').textContent = totalModified.test.toFixed(0);
-            document.getElementById('totalModifiedContent').textContent = totalModified.content.toFixed(0);
-            document.getElementById('totalModifiedTotal').textContent = totalModifiedSum.toFixed(0);
+            setText('totalModifiedAnalytics', totalModified.analytics.toFixed(0));
+            setText('totalModifiedDesign', totalModified.design.toFixed(0));
+            setText('totalModifiedFrontend', totalModified.frontend.toFixed(0));
+            setText('totalModifiedBackend', totalModified.backend.toFixed(0));
+            setText('totalModifiedTest', totalModified.test.toFixed(0));
+            setText('totalModifiedContent', totalModified.content.toFixed(0));
+            setText('totalModifiedTotal', totalModifiedSum.toFixed(0));
 
             // 5. Final project total
-            document.getElementById('finalAnalytics').textContent = totalModified.analytics.toFixed(0);
-            document.getElementById('finalDesign').textContent = totalModified.design.toFixed(0);
-            document.getElementById('finalFrontend').textContent = totalModified.frontend.toFixed(0);
-            document.getElementById('finalBackend').textContent = totalModified.backend.toFixed(0);
-            document.getElementById('finalTest').textContent = totalModified.test.toFixed(0);
-            document.getElementById('finalContent').textContent = totalModified.content.toFixed(0);
-            document.getElementById('finalTotalHours').textContent = totalModifiedSum.toFixed(0);
+            setText('finalAnalytics', totalModified.analytics.toFixed(0));
+            setText('finalDesign', totalModified.design.toFixed(0));
+            setText('finalFrontend', totalModified.frontend.toFixed(0));
+            setText('finalBackend', totalModified.backend.toFixed(0));
+            setText('finalTest', totalModified.test.toFixed(0));
+            setText('finalContent', totalModified.content.toFixed(0));
+            setText('finalTotalHours', totalModifiedSum.toFixed(0));
 
             // Calculate cost
-            const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 2500;
+            const hourlyRateEl = document.getElementById('hourlyRate');
+            const hourlyRate = hourlyRateEl ? (parseFloat(hourlyRateEl.value) || 2500) : 2500;
             const projectCost = totalModifiedSum * hourlyRate;
-            document.getElementById('projectCost').textContent = projectCost.toLocaleString('ru-RU') + ' ₽';
+            setText('projectCost', projectCost.toLocaleString('ru-RU') + ' ₽');
           } catch(e) {
             console.error('calculateTotals error:', e);
             showError('Ошибка расчёта итогов', e.message);
@@ -2848,7 +2852,7 @@
             renderFixedWorks();
             setTimeout(() => {
                 calculateTotals();
-            }, 50);
+            }, 150);
             updateCurrentProjectLabel();
         }
 
