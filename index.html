@@ -258,6 +258,36 @@
             border-collapse: collapse;
         }
 
+        .page-content .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .page-content table {
+            min-width: 700px;
+        }
+
+        .page-content table th:first-child,
+        .page-content table td:first-child {
+            position: sticky;
+            left: 0;
+            background: #fff;
+            z-index: 2;
+            width: 240px;
+            min-width: 240px;
+            max-width: 240px;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .page-content table th:not(:first-child):not(:last-child),
+        .page-content table td:not(:first-child):not(:last-child) {
+            text-align: center;
+        }
+
+        .page-content table tr.total-row td:first-child {
+            background: #EFF6FF;
+        }
+
         thead th {
             background: #F8FAFC;
             color: #64748B;
@@ -266,6 +296,7 @@
             text-align: left;
             border-bottom: 1px solid #E2E8F0;
             font-size: 13px;
+            white-space: nowrap;
         }
 
         tbody td {
@@ -1910,16 +1941,17 @@
                         </div>
                         <div class="page-content ${page.expanded ? 'expanded' : ''}">
                             ${page.blocks.length === 0 ? '<div class="empty-state">Нет блоков. Нажмите "+ Блок" чтобы добавить.</div>' : `
-                                <table style="table-layout:fixed;width:100%;">
+                                <div class="table-wrapper">
+                                <table style="width:100%;">
                                     <thead>
                                         <tr>
-                                            <th style="width:auto;">Название блока</th>
-                                            <th class="text-right" style="width:80px;">Аналитика</th>
-                                            <th class="text-right" style="width:70px;">Дизайн</th>
-                                            <th class="text-right" style="width:80px;">Front-end</th>
-                                            <th class="text-right" style="width:80px;">Back-end</th>
-                                            <th class="text-right" style="width:60px;">Test</th>
-                                            <th class="text-right" style="width:65px;">Итого</th>
+                                            <th>Название блока</th>
+                                            <th class="text-right" style="white-space:nowrap;">Аналитика</th>
+                                            <th class="text-right" style="white-space:nowrap;">Дизайн</th>
+                                            <th class="text-right" style="white-space:nowrap;">Front-end</th>
+                                            <th class="text-right" style="white-space:nowrap;">Back-end</th>
+                                            <th class="text-right" style="white-space:nowrap;">Test</th>
+                                            <th class="text-right" style="white-space:nowrap;">Итого</th>
                                             <th style="width:36px;"></th>
                                         </tr>
                                     </thead>
@@ -1973,6 +2005,7 @@
                                         </tr>
                                     </tbody>
                                 </table>
+                                </div>
                             `}
                         </div>
                     </div>
