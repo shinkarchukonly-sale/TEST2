@@ -3730,7 +3730,7 @@
                     const assignee = isSection ? '' : (sectionAssignee[sec] || '');
                     wsData.push([
                         row.name,
-                        isSection ? '' : (row.hours > 0 ? row.hours : 1),
+                        isSection ? 0 : (row.hours > 0 ? row.hours : 1),
                         row.wbs,
                         row.pred || '',
                         assignee
