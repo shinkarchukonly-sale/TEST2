@@ -4683,15 +4683,42 @@
                     const wb = XLSX.read(data, { type: 'array' });
                     const ws = wb.Sheets[wb.SheetNames[0]];
                     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
-                    const pageNames = rows
-                        .map(r => r[0] ? String(r[0]).trim() : '')
-                        .filter(n => n.length > 0);
-                    if (pageNames.length === 0) {
+
+                    // Парсим страницы и блоки
+                    // Формат: колонка A = страница, колонка B = блок, C-G = часы
+                    const pagesMap = []; // [{name, blocks:[]}]
+                    let currentPage = null;
+
+                    for (const row of rows) {
+                        const pageName = row[0] ? String(row[0]).trim() : null;
+                        const blockName = row[1] ? String(row[1]).trim() : null;
+
+                        // Пропускаем заголовки
+                        if (blockName && (blockName === 'Тип функционала' || blockName === 'Оценка в часах')) continue;
+                        if (pageName && (pageName === 'Страница' || pageName === 'Уникальные блоки и страницы')) continue;
+
+                        if (pageName) {
+                            currentPage = { name: pageName, blocks: [] };
+                            pagesMap.push(currentPage);
+                        }
+
+                        if (blockName && currentPage) {
+                            const a  = Math.round(parseFloat(row[2]) || 0);
+                            const d  = Math.round(parseFloat(row[3]) || 0);
+                            const fe = Math.round(parseFloat(row[4]) || 0);
+                            const be = Math.round(parseFloat(row[5]) || 0);
+                            const t  = Math.round(parseFloat(row[6]) || 0);
+                            currentPage.blocks.push({ name: blockName, analytics: a, design: d, frontend: fe, backend: be, test: t });
+                        }
+                    }
+
+                    if (pagesMap.length === 0) {
                         showError('Страницы не найдены.', 'Убедитесь что названия в первом столбце.');
                         return;
                     }
-                    _pdfImportPages = pageNames;
-                    showPagesImportModal(pageNames);
+
+                    _pdfImportPages = pagesMap;
+                    showPagesImportModal(pagesMap.map(p => p.name));
                 } catch(err) {
                     showError('Ошибка чтения файла.', err.message);
                 }
@@ -4723,8 +4750,8 @@
 
         async function confirmPdfImport() {
             const checked = document.querySelectorAll('#pdfPagesList input[type=checkbox]:checked');
-            const selectedNames = [...checked].map(cb => _pdfImportPages[parseInt(cb.dataset.index)]);
-            if (selectedNames.length === 0) {
+            const selectedIndices = [...checked].map(cb => parseInt(cb.dataset.index));
+            if (selectedIndices.length === 0) {
                 showError('Выберите хотя бы одну страницу.');
                 return;
             }
@@ -4732,13 +4759,67 @@
             if (!name) return;
             closePdfImportModal();
 
-            // Reset state and build pages directly (avoid addPage loop with duplicate IDs)
-            state.pages = selectedNames.map((pageName, i) => ({
-                id: Date.now() + i,
-                name: pageName,
-                expanded: true,
-                blocks: []
-            }));
+            // Строим библиотеку блоков для быстрого поиска по имени
+            const allLibBlocks = {};
+            ['easy','medium','hard'].forEach(diff => {
+                (blocks[diff] || []).forEach(b => {
+                    const key = b.name.trim().toLowerCase();
+                    if (!allLibBlocks[key]) allLibBlocks[key] = { ...b, difficulty: diff };
+                });
+            });
+
+            // Определяем сложность блока по часам если не найден в библиотеке
+            const guessDifficulty = (b) => {
+                const total = b.analytics + b.design + b.frontend + b.backend + b.test;
+                if (total <= 25) return 'easy';
+                if (total <= 45) return 'medium';
+                return 'hard';
+            };
+
+            // Создаём страницы с блоками
+            state.pages = selectedIndices.map((idx, i) => {
+                const pageData = _pdfImportPages[idx];
+                const pageName = typeof pageData === 'string' ? pageData : pageData.name;
+                const excelBlocks = typeof pageData === 'object' ? (pageData.blocks || []) : [];
+
+                const pageBlocks = excelBlocks.map((eb, bi) => {
+                    const key = eb.name.trim().toLowerCase();
+                    const libBlock = allLibBlocks[key];
+                    if (libBlock) {
+                        // Найден в библиотеке — берём данные из библиотеки
+                        return {
+                            id: Date.now() + i * 1000 + bi,
+                            name: libBlock.name,
+                            analytics: libBlock.analytics,
+                            design: libBlock.design,
+                            frontend: libBlock.frontend,
+                            backend: libBlock.backend,
+                            test: libBlock.test,
+                            difficulty: libBlock.difficulty
+                        };
+                    } else {
+                        // Не найден — берём часы из Excel
+                        return {
+                            id: Date.now() + i * 1000 + bi,
+                            name: eb.name,
+                            analytics: eb.analytics,
+                            design: eb.design,
+                            frontend: eb.frontend,
+                            backend: eb.backend,
+                            test: eb.test,
+                            difficulty: guessDifficulty(eb)
+                        };
+                    }
+                });
+
+                return {
+                    id: Date.now() + i,
+                    name: pageName,
+                    expanded: true,
+                    blocks: pageBlocks
+                };
+            });
+
             state.customWorks = { analytics: [], design: [], frontend: [], backend: [], testing: [], content: [], integrations: [] };
             state.integrations = { crm: false, maps: false, b24: false, hh: false, email: false, metrics: false, chat: false };
             currentProjectId = null;
