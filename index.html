@@ -312,6 +312,29 @@
             text-align: right;
         }
 
+        .hours-cell {
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.15s;
+            min-width: 36px;
+        }
+        .hours-cell:hover {
+            background: #EFF6FF;
+        }
+        .hours-cell input {
+            width: 48px;
+            border: 1.5px solid #3B82F6;
+            border-radius: 4px;
+            padding: 2px 4px;
+            font-size: 13px;
+            text-align: center;
+            outline: none;
+            background: #fff;
+        }
+        .new-block-row td {
+            padding: 8px 16px !important;
+            background: #F8FAFC;
+        }
         .total-row {
             background: #EFF6FF !important;
             font-weight: 600;
@@ -1940,8 +1963,7 @@
                             </div>
                         </div>
                         <div class="page-content ${page.expanded ? 'expanded' : ''}">
-                            ${page.blocks.length === 0 ? '<div class="empty-state">Нет блоков. Нажмите "+ Блок" чтобы добавить.</div>' : `
-                                <div class="table-wrapper">
+                            <div class="table-wrapper">
                                 <table style="width:100%;">
                                     <thead>
                                         <tr>
@@ -1979,11 +2001,11 @@
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td class="text-right">${block.analytics.toFixed(0)}</td>
-                                                    <td class="text-right">${block.design.toFixed(0)}</td>
-                                                    <td class="text-right">${block.frontend.toFixed(0)}</td>
-                                                    <td class="text-right">${block.backend.toFixed(0)}</td>
-                                                    <td class="text-right">${block.test.toFixed(0)}</td>
+                                                    <td class="text-right hours-cell" onclick="editBlockHours(this, ${page.id}, ${block.id}, 'analytics')">${block.analytics}</td>
+                                                    <td class="text-right hours-cell" onclick="editBlockHours(this, ${page.id}, ${block.id}, 'design')">${block.design}</td>
+                                                    <td class="text-right hours-cell" onclick="editBlockHours(this, ${page.id}, ${block.id}, 'frontend')">${block.frontend}</td>
+                                                    <td class="text-right hours-cell" onclick="editBlockHours(this, ${page.id}, ${block.id}, 'backend')">${block.backend}</td>
+                                                    <td class="text-right hours-cell" onclick="editBlockHours(this, ${page.id}, ${block.id}, 'test')">${block.test}</td>
                                                     <td class="text-right">${total.toFixed(0)}</td>
                                                     <td>
                                                         <button class="icon-btn delete" onclick="deleteBlock(${page.id}, ${block.id})">
@@ -2003,10 +2025,35 @@
                                             <td class="text-right"><strong>${pageTotal.total.toFixed(0)}</strong></td>
                                             <td></td>
                                         </tr>
+                                        <tr class="new-block-row" id="new-block-row-${page.id}">
+                                            <td colspan="8">
+                                                <div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+                                                    <input type="text" placeholder="Название нового блока..." id="new-block-name-${page.id}"
+                                                        style="flex:1;border:1px dashed #CBD5E1;border-radius:6px;padding:7px 12px;font-size:13px;outline:none;color:#1E293B;"
+                                                        onkeydown="if(event.key==='Enter') addInlineBlock(${page.id})"
+                                                        onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#CBD5E1'">
+                                                    <input type="number" placeholder="Ан" id="new-block-a-${page.id}" min="0"
+                                                        style="width:52px;border:1px dashed #CBD5E1;border-radius:6px;padding:7px 8px;font-size:13px;outline:none;text-align:center;"
+                                                        onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#CBD5E1'">
+                                                    <input type="number" placeholder="Ди" id="new-block-d-${page.id}" min="0"
+                                                        style="width:52px;border:1px dashed #CBD5E1;border-radius:6px;padding:7px 8px;font-size:13px;outline:none;text-align:center;"
+                                                        onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#CBD5E1'">
+                                                    <input type="number" placeholder="FE" id="new-block-fe-${page.id}" min="0"
+                                                        style="width:52px;border:1px dashed #CBD5E1;border-radius:6px;padding:7px 8px;font-size:13px;outline:none;text-align:center;"
+                                                        onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#CBD5E1'">
+                                                    <input type="number" placeholder="BE" id="new-block-be-${page.id}" min="0"
+                                                        style="width:52px;border:1px dashed #CBD5E1;border-radius:6px;padding:7px 8px;font-size:13px;outline:none;text-align:center;"
+                                                        onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#CBD5E1'">
+                                                    <input type="number" placeholder="Te" id="new-block-t-${page.id}" min="0"
+                                                        style="width:52px;border:1px dashed #CBD5E1;border-radius:6px;padding:7px 8px;font-size:13px;outline:none;text-align:center;"
+                                                        onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#CBD5E1'">
+                                                    <button onclick="addInlineBlock(${page.id})" style="background:#3B82F6;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer;white-space:nowrap;">+ Добавить</button>
+                                                </div>
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
-                                </div>
-                            `}
+                            </div>
                         </div>
                     </div>
                 `;
@@ -4485,8 +4532,59 @@
         }
 
         // ═══════════════════════════════════════════════
-        // DRAG & DROP — главная страница (блоки внутри страницы)
+        // INLINE BLOCK EDITING
         // ═══════════════════════════════════════════════
+        function editBlockHours(td, pageId, blockId, field) {
+            if (td.querySelector('input')) return; // уже редактируется
+            const currentVal = td.textContent.trim();
+            td.innerHTML = `<input type="number" min="0" value="${currentVal}" onclick="event.stopPropagation()">`;
+            const input = td.querySelector('input');
+            input.focus();
+            input.select();
+            const save = () => {
+                const newVal = Math.max(0, Math.round(parseFloat(input.value) || 0));
+                const page = state.pages.find(p => p.id === pageId);
+                if (page) {
+                    const block = page.blocks.find(b => b.id === blockId);
+                    if (block) {
+                        block[field] = newVal;
+                        calculateTotals();
+                        renderPages();
+                    }
+                }
+            };
+            input.addEventListener('blur', save);
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') { e.preventDefault(); save(); }
+                if (e.key === 'Escape') { renderPages(); }
+            });
+        }
+
+        function addInlineBlock(pageId) {
+            const nameEl = document.getElementById('new-block-name-' + pageId);
+            const aEl    = document.getElementById('new-block-a-'    + pageId);
+            const dEl    = document.getElementById('new-block-d-'    + pageId);
+            const feEl   = document.getElementById('new-block-fe-'   + pageId);
+            const beEl   = document.getElementById('new-block-be-'   + pageId);
+            const tEl    = document.getElementById('new-block-t-'    + pageId);
+            const name = nameEl ? nameEl.value.trim() : '';
+            if (!name) { if (nameEl) { nameEl.focus(); nameEl.style.borderColor='#EF4444'; } return; }
+            const a  = Math.round(parseFloat(aEl?.value)  || 0);
+            const d  = Math.round(parseFloat(dEl?.value)  || 0);
+            const fe = Math.round(parseFloat(feEl?.value) || 0);
+            const be = Math.round(parseFloat(beEl?.value) || 0);
+            const t  = Math.round(parseFloat(tEl?.value)  || 0);
+            const total = a + d + fe + be + t;
+            const difficulty = total <= 25 ? 'easy' : total <= 45 ? 'medium' : 'hard';
+            const page = state.pages.find(p => p.id === pageId);
+            if (!page) return;
+            page.blocks.push({ id: Date.now(), name, analytics: a, design: d, frontend: fe, backend: be, test: t, difficulty });
+            calculateTotals();
+            renderPages();
+            // Восстанавливаем фокус на поле имени после ре-рендера
+            const newNameEl = document.getElementById('new-block-name-' + pageId);
+            if (newNameEl) newNameEl.focus();
+        }
         let _pageDrag = { pageId: null, blockId: null };
 
         function onPageBlockDragStart(e) {
