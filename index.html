@@ -4755,9 +4755,13 @@
                 showError('Выберите хотя бы одну страницу.');
                 return;
             }
+
+            // Сохраняем данные ДО закрытия модального окна
+            const savedPages = [..._pdfImportPages];
+            closePdfImportModal();
+
             const name = prompt('Название проекта:', 'Проект ' + new Date().toLocaleDateString('ru-RU'));
             if (!name) return;
-            closePdfImportModal();
 
             // Строим библиотеку блоков для быстрого поиска по имени
             const allLibBlocks = {};
@@ -4768,7 +4772,6 @@
                 });
             });
 
-            // Определяем сложность блока по часам если не найден в библиотеке
             const guessDifficulty = (b) => {
                 const total = b.analytics + b.design + b.frontend + b.backend + b.test;
                 if (total <= 25) return 'easy';
@@ -4776,9 +4779,9 @@
                 return 'hard';
             };
 
-            // Создаём страницы с блоками
             state.pages = selectedIndices.map((idx, i) => {
-                const pageData = _pdfImportPages[idx];
+                const pageData = savedPages[idx];
+                if (!pageData) return { id: Date.now() + i, name: 'Страница ' + (i+1), expanded: true, blocks: [] };
                 const pageName = typeof pageData === 'string' ? pageData : pageData.name;
                 const excelBlocks = typeof pageData === 'object' ? (pageData.blocks || []) : [];
 
@@ -4786,7 +4789,6 @@
                     const key = eb.name.trim().toLowerCase();
                     const libBlock = allLibBlocks[key];
                     if (libBlock) {
-                        // Найден в библиотеке — берём данные из библиотеки
                         return {
                             id: Date.now() + i * 1000 + bi,
                             name: libBlock.name,
@@ -4798,7 +4800,6 @@
                             difficulty: libBlock.difficulty
                         };
                     } else {
-                        // Не найден — берём часы из Excel
                         return {
                             id: Date.now() + i * 1000 + bi,
                             name: eb.name,
@@ -4812,12 +4813,7 @@
                     }
                 });
 
-                return {
-                    id: Date.now() + i,
-                    name: pageName,
-                    expanded: true,
-                    blocks: pageBlocks
-                };
+                return { id: Date.now() + i, name: pageName, expanded: true, blocks: pageBlocks };
             });
 
             state.customWorks = { analytics: [], design: [], frontend: [], backend: [], testing: [], content: [], integrations: [] };
@@ -4827,6 +4823,7 @@
             renderPages();
             calculateTotals();
 
+            isSaving = false; // сбрасываем на случай зависшего флага
             isSaving = true;
             setSaveBtn('loading');
             try {
@@ -4837,6 +4834,7 @@
                 projects.unshift({ id: row.id, name: row.name, createdAt: row.created_at, updatedAt: row.updated_at, snapshot, totals: calcProjectTotals(snapshot) });
                 updateProjectsCount();
                 updateCurrentProjectLabel();
+                renderProjectsList();
                 setSaveBtn('saved');
                 switchView('calculator');
                 showSuccess('Проект создан: ' + selectedIndices.length + ' страниц!');
