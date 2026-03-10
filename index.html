@@ -4839,7 +4839,7 @@
                 updateCurrentProjectLabel();
                 setSaveBtn('saved');
                 switchView('calculator');
-                showSuccess('Проект создан: ' + selectedNames.length + ' страниц!');
+                showSuccess('Проект создан: ' + selectedIndices.length + ' страниц!');
             } catch (e) {
                 showError('Ошибка сохранения проекта.', e.message);
                 setSaveBtn('idle');
