@@ -2406,118 +2406,75 @@
 
             // 2. Calculate fixed works
             const fixedWorks = {
-                analytics: 0,
-                design: 0,
-                frontend: 0,
-                backend: 0,
-                test: 0,
-                content: 0
+                analytics: 0, design: 0, frontend: 0, backend: 0, test: 0, content: 0
             };
 
-            // Analytics works
-            const analyticsCuration = blocksTotal.analytics * (state.percentages.analyticsCuration / 100);
-            const analyticsOperations = blocksTotal.analytics * (state.percentages.analyticsOperations / 100);
-            const analyticsPreparation = blocksTotal.analytics * (state.percentages.analyticsPreparation / 100);
-            
-            fixedWorks.analytics = analyticsCuration + analyticsOperations + state.fixedValues.analyticsBenchmark + state.fixedValues.analyticsBrief + state.fixedValues.analyticsRequirements + state.fixedValues.analyticsStructure + analyticsPreparation;
+            // Хелперы с учётом disabledWorks
+            const dw = state.disabledWorks || { percentages: [], fixed: [], integrations: [] };
+            const dwPct = (base, key) => (dw.percentages || []).includes(key) ? 0 : base * ((state.percentages[key] || 0) / 100);
+            const dwFix = (key) => (dw.fixed || []).includes(key) ? 0 : (state.fixedValues[key] || 0);
+            const dwInt = (key) => (dw.integrations || []).includes(key) ? false : state.integrations[key];
 
+            // Analytics works
+            const analyticsCuration    = dwPct(blocksTotal.analytics, 'analyticsCuration');
+            const analyticsOperations  = dwPct(blocksTotal.analytics, 'analyticsOperations');
+            const analyticsPreparation = dwPct(blocksTotal.analytics, 'analyticsPreparation');
+            fixedWorks.analytics = analyticsCuration + analyticsOperations + dwFix('analyticsBenchmark') + dwFix('analyticsBrief') + dwFix('analyticsRequirements') + dwFix('analyticsStructure') + analyticsPreparation;
             setText('analyticsCuration', analyticsCuration.toFixed(0));
             setText('analyticsOperations', analyticsOperations.toFixed(0));
             setText('analyticsPreparation', analyticsPreparation.toFixed(0));
 
             // Design works
-            const designOperations = blocksTotal.design * (state.percentages.designOperations / 100);
-            const designUIKit = blocksTotal.design * (state.percentages.designUIKit / 100);
-            const designUsedBlocks = blocksTotal.design * (state.percentages.designUsedBlocks / 100);
-            // designBeforeSupervision включает blocksTotal только для расчёта % надзора
-            const designBeforeSupervision = blocksTotal.design + designOperations + state.fixedValues.designAnimMain + state.fixedValues.designAnimInner + state.fixedValues.designAdaptMain + state.fixedValues.designAdaptAll + state.fixedValues.designUIKitMain + designUIKit + designUsedBlocks;
-            const designSupervision = designBeforeSupervision * (state.percentages.designSupervision / 100);
-            
-            // fixedWorks.design = только РАБОТЫ (без blocksTotal.design — он добавится в totalWithWorks)
-            fixedWorks.design = designOperations + state.fixedValues.designAnimMain + state.fixedValues.designAnimInner + state.fixedValues.designAdaptMain + state.fixedValues.designAdaptAll + state.fixedValues.designUIKitMain + designUIKit + designUsedBlocks + designSupervision;
-
+            const designOperations  = dwPct(blocksTotal.design, 'designOperations');
+            const designUIKit       = dwPct(blocksTotal.design, 'designUIKit');
+            const designUsedBlocks  = dwPct(blocksTotal.design, 'designUsedBlocks');
+            const designBeforeSupervision = blocksTotal.design + designOperations + dwFix('designAnimMain') + dwFix('designAnimInner') + dwFix('designAdaptMain') + dwFix('designAdaptAll') + dwFix('designUIKitMain') + designUIKit + designUsedBlocks;
+            const designSupervision = dwPct(designBeforeSupervision, 'designSupervision');
+            fixedWorks.design = designOperations + dwFix('designAnimMain') + dwFix('designAnimInner') + dwFix('designAdaptMain') + dwFix('designAdaptAll') + dwFix('designUIKitMain') + designUIKit + designUsedBlocks + designSupervision;
             setText('designOperations', designOperations.toFixed(0));
             setText('designUIKit', designUIKit.toFixed(0));
             setText('designUsedBlocks', designUsedBlocks.toFixed(0));
             setText('designSupervision', designSupervision.toFixed(0));
 
             // Frontend works
-            const frontendOperations = blocksTotal.frontend * (state.percentages.frontendOperations / 100);
-            const frontendReview = blocksTotal.frontend * (state.percentages.frontendReview / 100);
-            const frontendBugs = blocksTotal.frontend * (state.percentages.frontendBugs / 100);
-            const frontendIntegration = blocksTotal.frontend * (state.percentages.frontendIntegration / 100);
-            
-            fixedWorks.frontend = state.fixedValues.frontendSetup + state.fixedValues.frontendPrototypes + frontendOperations + frontendReview + frontendBugs + state.fixedValues.frontendAnimMain + state.fixedValues.frontendAnimInner + frontendIntegration;
-
+            const frontendOperations  = dwPct(blocksTotal.frontend, 'frontendOperations');
+            const frontendReview      = dwPct(blocksTotal.frontend, 'frontendReview');
+            const frontendBugs        = dwPct(blocksTotal.frontend, 'frontendBugs');
+            const frontendIntegration = dwPct(blocksTotal.frontend, 'frontendIntegration');
+            fixedWorks.frontend = dwFix('frontendSetup') + dwFix('frontendPrototypes') + frontendOperations + frontendReview + frontendBugs + dwFix('frontendAnimMain') + dwFix('frontendAnimInner') + frontendIntegration;
             setText('frontendOperations', frontendOperations.toFixed(0));
             setText('frontendReview', frontendReview.toFixed(0));
             setText('frontendBugs', frontendBugs.toFixed(0));
             setText('frontendIntegration', frontendIntegration.toFixed(0));
 
             // Backend works
-            const backendOperations = blocksTotal.backend * (state.percentages.backendOperations / 100);
-            const backendReview = blocksTotal.backend * (state.percentages.backendReview / 100);
-            const backendBugs = blocksTotal.backend * (state.percentages.backendBugs / 100);
-            
-            fixedWorks.backend = state.fixedValues.backendSetup + backendOperations + backendReview + backendBugs + state.fixedValues.backendMultilang + state.fixedValues.backendSearch;
-            fixedWorks.frontend += state.fixedValues.backendMultilangFront + state.fixedValues.backendSearchFront;
-
+            const backendOperations = dwPct(blocksTotal.backend, 'backendOperations');
+            const backendReview     = dwPct(blocksTotal.backend, 'backendReview');
+            const backendBugs       = dwPct(blocksTotal.backend, 'backendBugs');
+            fixedWorks.backend  = dwFix('backendSetup') + backendOperations + backendReview + backendBugs + dwFix('backendMultilang') + dwFix('backendSearch');
+            fixedWorks.frontend += dwFix('backendMultilangFront') + dwFix('backendSearchFront');
             setText('backendOperations', backendOperations.toFixed(0));
             setText('backendReview', backendReview.toFixed(0));
             setText('backendBugs', backendBugs.toFixed(0));
 
             // Integrations
-            if (state.integrations.crm) {
-                fixedWorks.analytics += 1;
-                fixedWorks.design += 1;
-                fixedWorks.backend += 50;
-                fixedWorks.test += 10;
-            }
-            if (state.integrations.maps) {
-                fixedWorks.analytics += 1;
-                fixedWorks.design += 1;
-                fixedWorks.frontend += 16;
-            }
-            if (state.integrations.b24) {
-                fixedWorks.analytics += 1;
-                fixedWorks.design += 1;
-                fixedWorks.backend += 16;
-                fixedWorks.test += 3.2;
-            }
-            if (state.integrations.hh) {
-                fixedWorks.analytics += 2;
-                fixedWorks.design += 2;
-                fixedWorks.backend += 24;
-                fixedWorks.test += 4.8;
-            }
-            if (state.integrations.email) {
-                fixedWorks.analytics += 1;
-                fixedWorks.design += 1;
-                fixedWorks.backend += 32;
-                fixedWorks.test += 8;
-            }
-            if (state.integrations.metrics) {
-                fixedWorks.frontend += 8;
-                fixedWorks.backend += 1;
-                fixedWorks.test += 0.2;
-            }
-            if (state.integrations.chat) {
-                fixedWorks.frontend += 16;
-                fixedWorks.backend += 1;
-                fixedWorks.test += 0.2;
-            }
+            if (dwInt('crm'))     { fixedWorks.analytics += 1; fixedWorks.design += 1; fixedWorks.backend += 50; fixedWorks.test += 10; }
+            if (dwInt('maps'))    { fixedWorks.analytics += 1; fixedWorks.design += 1; fixedWorks.frontend += 16; }
+            if (dwInt('b24'))     { fixedWorks.analytics += 1; fixedWorks.design += 1; fixedWorks.backend += 16; fixedWorks.test += 3.2; }
+            if (dwInt('hh'))      { fixedWorks.analytics += 2; fixedWorks.design += 2; fixedWorks.backend += 24; fixedWorks.test += 4.8; }
+            if (dwInt('email'))   { fixedWorks.analytics += 1; fixedWorks.design += 1; fixedWorks.backend += 32; fixedWorks.test += 8; }
+            if (dwInt('metrics')) { fixedWorks.frontend += 8; fixedWorks.backend += 1; fixedWorks.test += 0.2; }
+            if (dwInt('chat'))    { fixedWorks.frontend += 16; fixedWorks.backend += 1; fixedWorks.test += 0.2; }
 
             // Testing works
-            const testingOperations = blocksTotal.test * (state.percentages.testingOperations / 100);
-            const testingProd = blocksTotal.test * (state.percentages.testingProd / 100);
-            
-            fixedWorks.test += testingOperations + testingProd + state.fixedValues.testingArtifacts + state.fixedValues.testingPrototypes + state.fixedValues.testingDesign + state.fixedValues.testingPerformance + state.fixedValues.testingContent;
-
+            const testingOperations = dwPct(blocksTotal.test, 'testingOperations');
+            const testingProd       = dwPct(blocksTotal.test, 'testingProd');
+            fixedWorks.test += testingOperations + testingProd + dwFix('testingArtifacts') + dwFix('testingPrototypes') + dwFix('testingDesign') + dwFix('testingPerformance') + dwFix('testingContent');
             setText('testingOperations', testingOperations.toFixed(0));
             setText('testingProd', testingProd.toFixed(0));
 
             // Content works
-            fixedWorks.content = state.fixedValues.contentFill + state.fixedValues.contentInstruction + 8;
+            fixedWorks.content = dwFix('contentFill') + dwFix('contentInstruction') + 8;
             fixedWorks.analytics += 4;
             fixedWorks.frontend += 8;
             fixedWorks.backend += 8;
