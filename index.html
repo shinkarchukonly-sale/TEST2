@@ -1668,7 +1668,7 @@
             analyticsPreparation: 10,
             designOperations: 20,
             designUIKit: 30,
-            designUsedBlocks: -20,
+            designUsedBlocks: 20,
             designSupervision: 5,
             frontendOperations: 10,
             frontendReview: 20,
@@ -2167,8 +2167,8 @@
                     `<span id="designUIKit">0</span>`
                 )}
                 ${workItem('percentages', 'designUsedBlocks',
-                    `Использование готовых блоков <input type="number" value="${Math.abs(state.percentages.designUsedBlocks)}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.designUsedBlocks=-parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Дизайн × ${state.percentages.designUsedBlocks}% (минус)`,
+                    `Использование готовых блоков <input type="number" value="${state.percentages.designUsedBlocks}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.designUsedBlocks=parseFloat(this.value);calculateTotals();saveState()">%`,
+                    `= Σ Дизайн × ${state.percentages.designUsedBlocks}% (плюс)`,
                     `<span id="designUsedBlocks">0</span>`
                 )}
                 ${workItem('percentages', 'designSupervision',
@@ -3019,7 +3019,13 @@
             if (s.customWorks) Object.keys(s.customWorks).forEach(k => {
                 if (Array.isArray(s.customWorks[k])) state.customWorks[k] = s.customWorks[k];
             });
-            if (s.disabledWorks) Object.assign(state.disabledWorks, s.disabledWorks);
+            if (s.disabledWorks) {
+                state.disabledWorks.percentages = s.disabledWorks.percentages || [];
+                state.disabledWorks.fixed = s.disabledWorks.fixed || [];
+                state.disabledWorks.integrations = s.disabledWorks.integrations || [];
+            } else {
+                state.disabledWorks = { percentages: [], fixed: [], integrations: [] };
+            }
             if (s.integrationsData) Object.assign(state.integrationsData, s.integrationsData);
             switchView('calculator');
             renderPages();
