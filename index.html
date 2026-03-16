@@ -4443,11 +4443,6 @@
             addCustomWork(category, name, hours);
             renderWorksAdminPanel();
         }
-            if (!state.disabledWorks[type].includes(key)) {
-                state.disabledWorks[type].push(key);
-                renderWorksAdminPanel();
-            }
-        }
 
         function disableWorkMain(type, key) {
             if (!state.disabledWorks[type].includes(key)) {
@@ -4532,7 +4527,13 @@
                 const rows = await sbFetch('GET', 'settings?key=eq.works_settings&select=value');
                 if (rows && rows.length > 0 && rows[0].value) {
                     const s = rows[0].value;
-                    if (s.percentages)      state.percentages      = { ...state.percentages,      ...s.percentages };
+                    if (s.percentages) {
+                        state.percentages = { ...state.percentages, ...s.percentages };
+                        // designUsedBlocks должен быть положительным (плюс, не скидка)
+                        if (state.percentages.designUsedBlocks < 0) {
+                            state.percentages.designUsedBlocks = Math.abs(state.percentages.designUsedBlocks);
+                        }
+                    }
                     if (s.fixedValues)      state.fixedValues      = { ...state.fixedValues,      ...s.fixedValues };
                     if (s.integrationsData) state.integrationsData = { ...state.integrationsData, ...s.integrationsData };
                     // disabledWorks НЕ грузим из глобальных настроек — это per-project
