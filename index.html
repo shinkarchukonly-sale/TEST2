@@ -1167,15 +1167,15 @@
         <div class="sidebar">
             <div class="logo">Only. Calculator</div>
             
-            <div class="nav-item active" id="navCalculator" onclick="switchView('calculator')">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                Калькулятор
-            </div>
-            
-            <div class="nav-item" id="navProjects" onclick="switchView('projects')">
+            <div class="nav-item active" id="navProjects" onclick="switchView('projects')">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                 Проекты
                 <span id="projectsCount" style="margin-left:auto;background:#3B82F6;color:white;border-radius:10px;padding:2px 7px;font-size:11px;font-weight:700;">0</span>
+            </div>
+
+            <div class="nav-item" id="navCalculator" onclick="switchView('calculator')" style="display:none;padding-left:32px;font-size:13px;opacity:0.85;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                <span id="navCurrentProjectName" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
             </div>
             
             <div class="nav-item" onclick="toggleAdminPanel()">
@@ -1205,6 +1205,7 @@
                     <div id="currentProjectLabel" style="display:none;">
                         <span id="currentProjectName"></span>
                     </div>
+                    <div id="calcCategoryBadge" style="display:none;margin-top:4px;"></div>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-secondary" id="undoBtn" onclick="historyUndo()" title="Отменить (Ctrl+Z)" disabled style="padding:8px 10px;">
@@ -1628,7 +1629,15 @@
     <div class="admin-panel" id="adminPanel">
         <div class="admin-content">
             <div class="admin-header">
-                <h2>Управление блоками</h2>
+                <div>
+                    <h2>Управление блоками</h2>
+                    <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
+                        <span style="font-size:12px;color:#64748B;">Категория:</span>
+                        <select id="blocksAdminCategorySelect" onchange="switchBlocksAdminCategory(this.value)"
+                            style="border:1px solid #E2E8F0;border-radius:6px;padding:4px 10px;font-size:13px;outline:none;background:#fff;cursor:pointer;">
+                        </select>
+                    </div>
+                </div>
                 <button class="admin-close" onclick="toggleAdminPanel()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -1658,7 +1667,15 @@
     <div class="admin-panel" id="worksAdminPanel">
         <div class="admin-content">
             <div class="admin-header">
-                <h2>Управление фиксированными работами</h2>
+                <div>
+                    <h2>Управление фиксированными работами</h2>
+                    <div style="margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <span style="font-size:12px;color:#64748B;">Категория:</span>
+                        <select id="worksAdminCategorySelect" onchange="switchWorksAdminCategory(this.value)"
+                            style="border:1px solid #E2E8F0;border-radius:6px;padding:4px 10px;font-size:13px;outline:none;background:#fff;cursor:pointer;">
+                        </select>
+                    </div>
+                </div>
                 <button class="admin-close" onclick="toggleWorksAdminPanel()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -1819,6 +1836,7 @@
         // State
         let state = {
             pages: [],
+            categoryId: null,
             currentPageForBlock: null,
             percentages: JSON.parse(JSON.stringify(defaultPercentages)),
             integrations: {
@@ -1852,7 +1870,7 @@
         async function init() {
             try {
                 await loadWorksData();
-                // Применяем глобальные настройки в state (до открытия проекта)
+                await loadCategoriesData();
                 applyGlobalWorksToState();
                 loadState();
 
@@ -2837,7 +2855,7 @@
                     <button class="work-delete-btn" onclick="deleteCustomWork('${category}', ${work.id})" title="Удалить">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
-                    <div class="work-name"><input type="text" value="${work.name || ''}" style="width:250px;border:1px solid #E2E8F0;border-radius:4px;padding:4px 8px;" onchange="updateCustomWorkName('${category}', ${work.id}, this.value)"></div>
+                    <div class="work-name"><input type="text" value="${work.name || ''}" style="min-width:200px;width:${Math.max(200, (work.name||'').length * 8 + 32)}px;max-width:500px;border:1px solid #E2E8F0;border-radius:4px;padding:4px 8px;" onchange="updateCustomWorkName('${category}', ${work.id}, this.value)" oninput="this.style.width=Math.max(200,this.value.length*8+32)+'px'"></div>
                     <div class="work-formula">Фиксировано</div>
                     <div class="work-hours">
                         <input type="number" value="${work.hours || 0}" min="0" style="width:70px;text-align:right;" onchange="updateCustomWorkHours('${category}', ${work.id}, this.value)">
@@ -2901,6 +2919,7 @@
         function getStateSnapshot() {
             return JSON.parse(JSON.stringify({
                 pages: state.pages,
+                categoryId: state.categoryId,
                 percentages: state.percentages,
                 fixedValues: state.fixedValues,
                 integrations: state.integrations,
@@ -3079,16 +3098,17 @@
         }
 
         async function createNewProject() {
-            const name = prompt('Название нового проекта:', 'Проект ' + (projects.length + 1));
-            if (!name) return;
+            // Теперь открываем модал выбора категории
+            openCategoryModal();
+        }
 
-            // Reset calculator state — берём настройки работ из глобальных
+        async function createNewProjectWithCategory(name, catId) {
             state.pages = [];
-            state.customWorks = { analytics: [], design: [], frontend: [], backend: [], testing: [], content: [], integrations: [] };
             state.integrations = { crm: false, maps: false, b24: false, hh: false, email: false, metrics: false, chat: false };
-            applyGlobalWorksToState();
+            applyCategoryToState(catId);
 
             isSaving = true;
+            setSaveBtn('loading');
             try {
                 const snapshot = getStateSnapshot();
                 const rows = await sbFetch('POST', TABLE, {
@@ -3100,12 +3120,9 @@
                 currentProjectId = row.id;
                 localStorage.setItem('lastOpenedProjectId', String(row.id));
                 projects.unshift({
-                    id: row.id,
-                    name: row.name,
-                    createdAt: row.created_at,
-                    updatedAt: row.updated_at,
-                    snapshot,
-                    totals: { hours: 0, pages: 0, blocks: 0 }
+                    id: row.id, name: row.name,
+                    createdAt: row.created_at, updatedAt: row.updated_at,
+                    snapshot, totals: { hours: 0, pages: 0, blocks: 0 }
                 });
                 updateProjectsCount();
                 switchView('calculator');
@@ -3117,9 +3134,10 @@
                 renderFixedWorks();
                 calculateTotals();
                 updateCurrentProjectLabel();
+                setSaveBtn('saved');
             } catch(e) {
-                console.error('createNewProject error:', e);
                 showError('Ошибка создания проекта.', e.message);
+                setSaveBtn('idle');
             } finally {
                 isSaving = false;
             }
@@ -3132,7 +3150,6 @@
             localStorage.setItem('lastOpenedProjectId', String(id));
             const s = proj.snapshot;
             if (s.pages) {
-                // Округляем все значения блоков до целых при загрузке
                 state.pages = s.pages.map(page => ({
                     ...page,
                     blocks: (page.blocks || []).map(b => ({
@@ -3144,6 +3161,11 @@
                         test:      Math.round(b.test      || 0),
                     }))
                 }));
+            }
+            // Загружаем блоки категории проекта
+            state.categoryId = s.categoryId || null;
+            if (state.categoryId) {
+                blocks = JSON.parse(JSON.stringify(getCategoryBlocks(state.categoryId)));
             }
             if (s.percentages) Object.assign(state.percentages, s.percentages);
             if (s.fixedValues) Object.assign(state.fixedValues, s.fixedValues);
@@ -3271,13 +3293,33 @@
         }
 
         function updateCurrentProjectLabel() {
-            const titleEl = document.getElementById('calcPageTitle');
-            if (!titleEl) return;
+            const titleEl  = document.getElementById('calcPageTitle');
+            const navCalc  = document.getElementById('navCalculator');
+            const navName  = document.getElementById('navCurrentProjectName');
+            const badgeEl  = document.getElementById('calcCategoryBadge');
             if (currentProjectId) {
                 const proj = projects.find(p => p.id === currentProjectId);
-                if (proj) { titleEl.textContent = proj.name; return; }
+                if (proj) {
+                    if (titleEl) titleEl.textContent = proj.name;
+                    if (navCalc) navCalc.style.display = 'flex';
+                    if (navName) navName.textContent = proj.name;
+                    // Category badge
+                    const catId = state.categoryId || proj.snapshot?.categoryId;
+                    const cat = catId ? getCategoryById(catId) : null;
+                    if (badgeEl) {
+                        if (cat) {
+                            badgeEl.style.display = 'inline-block';
+                            badgeEl.innerHTML = `<span style="background:${cat.color}20;color:${cat.color};padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600;">${cat.name}</span>`;
+                        } else {
+                            badgeEl.style.display = 'none';
+                        }
+                    }
+                    return;
+                }
             }
-            titleEl.textContent = 'Калькулятор оценки разработки сайта';
+            if (titleEl) titleEl.textContent = 'Калькулятор оценки разработки сайта';
+            if (navCalc) navCalc.style.display = 'none';
+            if (badgeEl) badgeEl.style.display = 'none';
         }
 
         function switchView(view) {
@@ -3378,6 +3420,7 @@
                             onchange="renameProject('${proj.id}', this.value)"
                             onclick="event.stopPropagation()">
                         <div class="project-meta">
+                            ${(() => { const catId = proj.snapshot?.categoryId; const cat = catId ? getCategoryById(catId) : null; return cat ? `<span style="background:${cat.color}20;color:${cat.color};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">${cat.name}</span>` : ''; })()}
                             <span>Создан: ${formatDate(proj.createdAt)}</span>
                             <span>Изменён: ${formatDate(proj.updatedAt)}</span>
                             ${isActive ? '<span style="color:#3B82F6;font-weight:600;">● Открыт сейчас</span>' : ''}
@@ -3988,6 +4031,15 @@
             const panel = document.getElementById('adminPanel');
             panel.classList.toggle('active');
             if (panel.classList.contains('active')) {
+                populateCategorySelects();
+                // Загружаем блоки категории текущего проекта
+                const catId = state.categoryId || categoriesList[0]?.id;
+                if (catId) {
+                    _adminCategoryId = catId;
+                    blocks = JSON.parse(JSON.stringify(getCategoryBlocks(catId)));
+                    const sel = document.getElementById('blocksAdminCategorySelect');
+                    if (sel) sel.value = catId;
+                }
                 renderAdminPanel();
             }
         }
@@ -4114,14 +4166,24 @@
             renderAdminPanel();
         }
 
-        function saveBlocksData() {
+        async function saveBlocksData() {
             try {
-                localStorage.setItem('calculatorBlocks', JSON.stringify(blocks));
-                alert('Изменения сохранены!');
-                // Re-render blocks list in modal
-                renderBlocksList();
+                const catId = _adminCategoryId || state.categoryId;
+                if (catId) {
+                    await saveCategoryBlocks(catId, blocks);
+                    // Если это категория текущего проекта — обновляем блоки в памяти
+                    if (catId === state.categoryId) {
+                        // blocks уже актуальны
+                        renderBlocksList();
+                    }
+                    showSuccess(`Блоки категории «${getCategoryById(catId)?.name || catId}» сохранены!`);
+                } else {
+                    localStorage.setItem('calculatorBlocks', JSON.stringify(blocks));
+                    showSuccess('Изменения сохранены!');
+                }
+                renderAdminPanel();
             } catch (e) {
-                alert('Ошибка сохранения: ' + e.message);
+                showError('Ошибка сохранения блоков.', e.message);
             }
         }
 
@@ -4131,7 +4193,7 @@
                 localStorage.removeItem('calculatorBlocks');
                 renderAdminPanel();
                 renderBlocksList();
-                alert('Блоки сброшены к исходным значениям');
+                showSuccess('Блоки сброшены к исходным значениям');
             }
         }
 
@@ -4158,7 +4220,17 @@
             const panel = document.getElementById('worksAdminPanel');
             panel.classList.toggle('active');
             if (panel.classList.contains('active')) {
-                renderWorksAdminPanel();
+                populateCategorySelects();
+                // Загружаем работы категории текущего проекта
+                const catId = state.categoryId || categoriesList[0]?.id;
+                if (catId) {
+                    _adminCategoryId = catId;
+                    const sel = document.getElementById('worksAdminCategorySelect');
+                    if (sel) sel.value = catId;
+                    switchWorksAdminCategory(catId);
+                } else {
+                    renderWorksAdminPanel();
+                }
             }
         }
 
@@ -4598,27 +4670,72 @@
             }
         }
 
+        // Текущая категория в Админке (может отличаться от проекта)
+        let _adminCategoryId = null;
+
+        function populateCategorySelects() {
+            const opts = categoriesList.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            const sel1 = document.getElementById('blocksAdminCategorySelect');
+            const sel2 = document.getElementById('worksAdminCategorySelect');
+            if (sel1) sel1.innerHTML = opts;
+            if (sel2) sel2.innerHTML = opts;
+            // По умолчанию — категория текущего проекта, или первая
+            const defCat = state.categoryId || categoriesList[0]?.id;
+            if (sel1 && defCat) sel1.value = defCat;
+            if (sel2 && defCat) sel2.value = defCat;
+            _adminCategoryId = defCat;
+        }
+
+        function switchBlocksAdminCategory(catId) {
+            _adminCategoryId = catId;
+            blocks = JSON.parse(JSON.stringify(getCategoryBlocks(catId)));
+            renderAdminPanel();
+        }
+
+        function switchWorksAdminCategory(catId) {
+            _adminCategoryId = catId;
+            const works = getCategoryWorks(catId);
+            // Временно переключаем globalWorksSettings для рендера
+            globalWorksSettings.percentages    = JSON.parse(JSON.stringify(works.percentages    || globalWorksSettings.percentages));
+            globalWorksSettings.fixedValues    = JSON.parse(JSON.stringify(works.fixedValues    || globalWorksSettings.fixedValues));
+            globalWorksSettings.integrationsData = JSON.parse(JSON.stringify(works.integrationsData || globalWorksSettings.integrationsData));
+            globalWorksSettings.disabledWorks  = JSON.parse(JSON.stringify(works.disabledWorks  || { percentages: [], fixed: [], integrations: [] }));
+            globalWorksSettings.customWorks    = JSON.parse(JSON.stringify(works.customWorks    || { analytics: [], design: [], frontend: [], backend: [], testing: [], content: [] }));
+            globalWorksSettings.customNames    = JSON.parse(JSON.stringify(works.customNames    || {}));
+            renderWorksAdminPanel();
+        }
+
         async function saveWorksData() {
+            const catId = _adminCategoryId || state.categoryId;
             const btn = document.querySelector('button[onclick="saveWorksData()"]');
             if (btn) { btn.disabled = true; btn.textContent = 'Сохраняю...'; }
             try {
                 const worksSettings = {
-                    percentages: globalWorksSettings.percentages,
-                    fixedValues: globalWorksSettings.fixedValues,
+                    percentages:      globalWorksSettings.percentages,
+                    fixedValues:      globalWorksSettings.fixedValues,
                     integrationsData: globalWorksSettings.integrationsData,
-                    customWorks: globalWorksSettings.customWorks,
-                    customNames: globalWorksSettings.customNames || {}
+                    disabledWorks:    globalWorksSettings.disabledWorks,
+                    customWorks:      globalWorksSettings.customWorks,
+                    customNames:      globalWorksSettings.customNames || {}
                 };
-                await sbFetch('POST', 'settings?on_conflict=key', {
-                    key: 'works_settings',
-                    value: worksSettings,
-                    updated_at: new Date().toISOString()
-                });
-                localStorage.setItem('calculatorPercentages', JSON.stringify(globalWorksSettings.percentages));
-                localStorage.setItem('calculatorFixedValues', JSON.stringify(globalWorksSettings.fixedValues));
-                localStorage.setItem('calculatorIntegrationsData', JSON.stringify(globalWorksSettings.integrationsData));
-                localStorage.removeItem('calculatorDisabledWorks');
-                showSuccess('Настройки работ сохранены! Новые проекты будут использовать эти значения.');
+                if (catId) {
+                    await saveCategoryWorks(catId, worksSettings);
+                    showSuccess(`Работы категории «${getCategoryById(catId)?.name || catId}» сохранены!`);
+                } else {
+                    // Fallback — глобальные настройки
+                    await sbFetch('POST', 'settings?on_conflict=key', {
+                        key: 'works_settings',
+                        value: worksSettings,
+                        updated_at: new Date().toISOString()
+                    });
+                    showSuccess('Настройки работ сохранены глобально!');
+                }
+                // Если редактируем текущую категорию проекта — применяем к state
+                if (catId && catId === state.categoryId) {
+                    applyCategoryToState(catId);
+                    renderFixedWorks();
+                    calculateTotals();
+                }
             } catch (e) {
                 showError('Ошибка сохранения настроек.', e.message);
             } finally {
@@ -4627,25 +4744,13 @@
         }
 
         async function resetWorksData() {
-            if (confirm('Сбросить все работы к исходным значениям? Это действие нельзя отменить.')) {
+            if (confirm('Сбросить все работы к исходным значениям?')) {
                 globalWorksSettings.percentages    = JSON.parse(JSON.stringify(defaultPercentages));
                 globalWorksSettings.fixedValues    = JSON.parse(JSON.stringify(defaultFixedValues));
                 globalWorksSettings.integrationsData = JSON.parse(JSON.stringify(defaultIntegrations));
-                try {
-                    await sbFetch('POST', 'settings?on_conflict=key', {
-                        key: 'works_settings',
-                        value: {
-                            percentages: globalWorksSettings.percentages,
-                            fixedValues: globalWorksSettings.fixedValues,
-                            integrationsData: globalWorksSettings.integrationsData
-                        },
-                        updated_at: new Date().toISOString()
-                    });
-                } catch(e) { console.error('Reset save error:', e); }
-                localStorage.removeItem('calculatorPercentages');
-                localStorage.removeItem('calculatorFixedValues');
-                localStorage.removeItem('calculatorIntegrationsData');
-                localStorage.removeItem('calculatorDisabledWorks');
+                globalWorksSettings.disabledWorks  = { percentages: [], fixed: [], integrations: [] };
+                globalWorksSettings.customWorks    = { analytics: [], design: [], frontend: [], backend: [], testing: [], content: [] };
+                globalWorksSettings.customNames    = {};
                 renderWorksAdminPanel();
                 showSuccess('Работы сброшены к исходным значениям');
             }
@@ -5201,8 +5306,142 @@
         }
 
         // ═══════════════════════════════════════════════
-        // HISTORY (UNDO / REDO)
+        // CATEGORIES
         // ═══════════════════════════════════════════════
+        const DEFAULT_CATEGORIES = [
+            { id: 'corporate', name: 'Базовый корпоративный сайт', color: '#3B82F6' },
+            { id: 'career',    name: 'Карьерный сайт',             color: '#10B981' },
+            { id: 'portal',    name: 'Портал',                     color: '#8B5CF6' },
+            { id: 'developer', name: 'Сайт застройщика',           color: '#F59E0B' },
+            { id: 'zhk',       name: 'Сайт ЖК',                    color: '#EF4444' }
+        ];
+
+        // Данные категорий: { [catId]: { blocks: {...}, worksSettings: {...} } }
+        let categoriesData = {};
+        let categoriesList = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+        let _selectedCategoryId = null; // временный выбор в модале
+
+        async function loadCategoriesData() {
+            try {
+                // Загружаем список категорий
+                const catRows = await sbFetch('GET', 'settings?key=eq.categories_list&select=value');
+                if (catRows && catRows.length > 0 && catRows[0].value) {
+                    categoriesList = catRows[0].value;
+                }
+                // Загружаем данные каждой категории (блоки + работы)
+                for (const cat of categoriesList) {
+                    try {
+                        const rows = await sbFetch('GET', `settings?key=eq.cat_${cat.id}&select=value`);
+                        if (rows && rows.length > 0 && rows[0].value) {
+                            categoriesData[cat.id] = rows[0].value;
+                        }
+                    } catch(e) {}
+                }
+            } catch(e) {
+                console.warn('Could not load categories:', e);
+            }
+        }
+
+        async function saveCategoryBlocks(catId, blocksData) {
+            if (!categoriesData[catId]) categoriesData[catId] = {};
+            categoriesData[catId].blocks = blocksData;
+            await sbFetch('POST', 'settings?on_conflict=key', {
+                key: `cat_${catId}`,
+                value: categoriesData[catId],
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        async function saveCategoryWorks(catId, worksData) {
+            if (!categoriesData[catId]) categoriesData[catId] = {};
+            categoriesData[catId].works = worksData;
+            await sbFetch('POST', 'settings?on_conflict=key', {
+                key: `cat_${catId}`,
+                value: categoriesData[catId],
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        async function saveCategoriesList() {
+            await sbFetch('POST', 'settings?on_conflict=key', {
+                key: 'categories_list',
+                value: categoriesList,
+                updated_at: new Date().toISOString()
+            });
+        }
+
+        function getCategoryBlocks(catId) {
+            return categoriesData[catId]?.blocks || JSON.parse(JSON.stringify(defaultBlocks));
+        }
+
+        function getCategoryWorks(catId) {
+            return categoriesData[catId]?.works || JSON.parse(JSON.stringify(globalWorksSettings));
+        }
+
+        function getCategoryById(catId) {
+            return categoriesList.find(c => c.id === catId);
+        }
+
+        function applyCategoryToState(catId) {
+            const works = getCategoryWorks(catId);
+            state.percentages      = JSON.parse(JSON.stringify(works.percentages      || globalWorksSettings.percentages));
+            state.fixedValues      = JSON.parse(JSON.stringify(works.fixedValues      || globalWorksSettings.fixedValues));
+            state.integrationsData = JSON.parse(JSON.stringify(works.integrationsData || globalWorksSettings.integrationsData));
+            state.disabledWorks    = JSON.parse(JSON.stringify(works.disabledWorks    || { percentages: [], fixed: [], integrations: [] }));
+            state.customWorks      = JSON.parse(JSON.stringify(works.customWorks      || { analytics: [], design: [], frontend: [], backend: [], testing: [], content: [] }));
+            state.categoryId       = catId;
+            blocks = JSON.parse(JSON.stringify(getCategoryBlocks(catId)));
+        }
+
+        // Модал выбора категории
+        function openCategoryModal() {
+            _selectedCategoryId = categoriesList[0]?.id || null;
+            document.getElementById('newProjectName').value = '';
+            renderCategoryList();
+            document.getElementById('categoryModal').classList.add('active');
+            setTimeout(() => document.getElementById('newProjectName').focus(), 100);
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').classList.remove('active');
+            _selectedCategoryId = null;
+        }
+
+        function renderCategoryList() {
+            const container = document.getElementById('categoryList');
+            if (!container) return;
+            container.innerHTML = categoriesList.map(cat => `
+                <label style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:2px solid ${_selectedCategoryId === cat.id ? cat.color : '#E2E8F0'};border-radius:10px;cursor:pointer;background:${_selectedCategoryId === cat.id ? cat.color + '10' : '#fff'};transition:all 0.15s;">
+                    <input type="radio" name="projectCategory" value="${cat.id}" ${_selectedCategoryId === cat.id ? 'checked' : ''} style="display:none;" onchange="_selectedCategoryId='${cat.id}';renderCategoryList()">
+                    <span style="width:12px;height:12px;border-radius:50%;background:${cat.color};flex-shrink:0;"></span>
+                    <span style="font-size:14px;font-weight:${_selectedCategoryId === cat.id ? '600' : '400'};color:#1E293B;">${cat.name}</span>
+                    ${_selectedCategoryId === cat.id ? `<svg style="margin-left:auto;color:${cat.color}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+                </label>
+            `).join('');
+        }
+
+        function addNewCategory() {
+            const input = document.getElementById('newCategoryName');
+            const name = input ? input.value.trim() : '';
+            if (!name) { if (input) { input.style.borderColor = '#EF4444'; } return; }
+            const colors = ['#3B82F6','#10B981','#8B5CF6','#F59E0B','#EF4444','#06B6D4','#EC4899','#84CC16'];
+            const color = colors[categoriesList.length % colors.length];
+            const id = 'cat_' + Date.now();
+            categoriesList.push({ id, name, color });
+            _selectedCategoryId = id;
+            if (input) input.value = '';
+            renderCategoryList();
+            saveCategoriesList().catch(e => console.error(e));
+        }
+
+        async function confirmCategoryAndCreate() {
+            const nameEl = document.getElementById('newProjectName');
+            const name = nameEl ? nameEl.value.trim() : '';
+            if (!name) { if (nameEl) { nameEl.style.borderColor = '#EF4444'; nameEl.focus(); } return; }
+            if (!_selectedCategoryId) { showError('Выберите категорию проекта.'); return; }
+            closeCategoryModal();
+            await createNewProjectWithCategory(name, _selectedCategoryId);
+        }
         const HISTORY_MAX = 50;
         let _history = [];      // массив снапшотов {snapshot, label, time}
         let _historyIdx = -1;   // текущая позиция
@@ -5338,6 +5577,39 @@
 
     <!-- History Panel -->
     <div class="history-panel" id="historyPanel">
+        <div class="modal-content" style="max-width:560px;">
+            <div class="modal-header">
+                <h3>Новый проект</h3>
+                <button class="close-btn" onclick="closeCategoryModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom:20px;">
+                    <label style="display:block;font-size:13px;color:#64748B;margin-bottom:8px;">Название проекта</label>
+                    <input type="text" id="newProjectName" placeholder="Введите название проекта..."
+                        style="width:100%;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;font-size:14px;outline:none;box-sizing:border-box;"
+                        onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#E2E8F0'"
+                        onkeydown="if(event.key==='Enter') confirmCategoryAndCreate()">
+                </div>
+                <div>
+                    <label style="display:block;font-size:13px;color:#64748B;margin-bottom:8px;">Категория проекта</label>
+                    <div id="categoryList" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;"></div>
+                    <div style="margin-top:12px;padding-top:12px;border-top:1px dashed #E2E8F0;display:flex;gap:8px;align-items:center;">
+                        <input type="text" id="newCategoryName" placeholder="Добавить новую категорию..."
+                            style="flex:1;border:1px solid #E2E8F0;border-radius:6px;padding:8px 12px;font-size:13px;outline:none;"
+                            onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#E2E8F0'"
+                            onkeydown="if(event.key==='Enter') addNewCategory()">
+                        <button onclick="addNewCategory()" style="background:#F1F5F9;border:1px solid #E2E8F0;border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap;">+ Добавить</button>
+                    </div>
+                </div>
+            </div>
+            <div style="padding:16px 24px;border-top:1px solid #E2E8F0;display:flex;gap:12px;justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="closeCategoryModal()">Отмена</button>
+                <button class="btn btn-primary" onclick="confirmCategoryAndCreate()">Создать проект</button>
+            </div>
+        </div>
+    </div>
+
+</body>
         <div class="history-panel-header">
             <h3>История изменений</h3>
             <button onclick="toggleHistoryPanel()" style="background:none;border:none;cursor:pointer;color:#64748B;padding:4px;">
