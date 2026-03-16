@@ -340,7 +340,55 @@
             font-weight: 600;
         }
 
-        /* Badge */
+        /* History panel */
+        .history-panel {
+            position: fixed;
+            top: 0; right: -360px;
+            width: 340px;
+            height: 100vh;
+            background: #fff;
+            border-left: 1px solid #E2E8F0;
+            box-shadow: -4px 0 24px rgba(0,0,0,0.08);
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.25s ease;
+        }
+        .history-panel.open { right: 0; }
+        .history-panel-header {
+            padding: 20px 20px 16px;
+            border-bottom: 1px solid #E2E8F0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .history-panel-header h3 { font-size: 15px; font-weight: 600; margin: 0; }
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: background 0.12s;
+            font-size: 13px;
+        }
+        .history-item:hover { background: #F8FAFC; }
+        .history-item.current {
+            background: #EFF6FF;
+            border-left-color: #3B82F6;
+            font-weight: 500;
+        }
+        .history-item.future { opacity: 0.45; }
+        .history-item-icon { color: #94A3B8; flex-shrink: 0; }
+        .history-item-text { flex: 1; }
+        .history-item-time { font-size: 11px; color: #94A3B8; flex-shrink: 0; }
         .badge {
             padding: 4px 12px;
             border-radius: 16px;
@@ -1147,6 +1195,16 @@
                     </div>
                 </div>
                 <div class="header-actions">
+                    <button class="btn btn-secondary" id="undoBtn" onclick="historyUndo()" title="Отменить (Ctrl+Z)" disabled style="padding:8px 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+                    </button>
+                    <button class="btn btn-secondary" id="redoBtn" onclick="historyRedo()" title="Вернуть (Ctrl+Y)" disabled style="padding:8px 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
+                    </button>
+                    <button class="btn btn-secondary" onclick="toggleHistoryPanel()" title="История изменений" id="historyBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        История
+                    </button>
                     <button class="btn btn-secondary" onclick="exportToExcel()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
                         Excel
@@ -1763,7 +1821,6 @@
             try {
                 await loadWorksData();
                 loadState();
-                renderFixedWorks();
 
                 // Загружаем проекты сразу — нужны для восстановления последнего открытого
                 await loadProjects().catch(e => console.error('loadProjects error:', e));
@@ -1772,7 +1829,7 @@
                 const lastProjectId = localStorage.getItem('lastOpenedProjectId');
                 if (lastProjectId && projects.length > 0) {
                     const proj = projects.find(p => String(p.id) === String(lastProjectId));
-                    if (proj) {
+                    if (proj && proj.snapshot && proj.snapshot.pages) {
                         openProject(proj.id);
                         return;
                     }
@@ -1788,6 +1845,7 @@
                         addPage('О компании');
                         state._skipCalculate = false;
                     }
+                    renderFixedWorks();
                     renderPages();
                     calculateTotals();
                     updateCurrentProjectLabel();
@@ -1814,6 +1872,7 @@
             if (!state._skipCalculate) {
                 calculateTotals();
             }
+            historyPush('Добавлена страница');
             saveState();
         }
 
@@ -1823,9 +1882,12 @@
                 return;
             }
             if (confirm('Удалить страницу?')) {
+                const page = state.pages.find(p => p.id === pageId);
+                const label = 'Удалена страница' + (page ? ': ' + page.name : '');
                 state.pages = state.pages.filter(p => p.id !== pageId);
                 renderPages();
                 calculateTotals();
+                historyPush(label);
                 saveState();
             }
         }
@@ -1925,15 +1987,18 @@
             closeBlockModal();
             renderPages();
             calculateTotals();
+            historyPush('Добавлен блок: ' + blockData.name);
             saveState();
         }
 
         function deleteBlock(pageId, blockId) {
             const page = state.pages.find(p => p.id === pageId);
             if (page) {
+                const block = page.blocks.find(b => b.id === blockId);
                 page.blocks = page.blocks.filter(b => b.id !== blockId);
                 renderPages();
                 calculateTotals();
+                historyPush('Удалён блок' + (block ? ': ' + block.name : ''));
                 saveState();
             }
         }
@@ -2587,6 +2652,39 @@
         // State management
         function saveState() {
             localStorage.setItem('calculatorState', JSON.stringify(state));
+            // Автосохранение в Supabase с дебаунсом
+            if (currentProjectId) {
+                scheduleAutosave();
+            }
+        }
+
+        let _autosaveTimer = null;
+        function scheduleAutosave() {
+            if (_autosaveTimer) clearTimeout(_autosaveTimer);
+            setSaveBtn('pending');
+            _autosaveTimer = setTimeout(async () => {
+                if (!currentProjectId || isSaving) return;
+                isSaving = true;
+                setSaveBtn('loading');
+                try {
+                    const snapshot = getStateSnapshot();
+                    await sbFetch('PATCH', TABLE + '?id=eq.' + currentProjectId, {
+                        snapshot,
+                        updated_at: new Date().toISOString()
+                    });
+                    const proj = projects.find(p => p.id === currentProjectId);
+                    if (proj) {
+                        proj.snapshot = snapshot;
+                        proj.updatedAt = new Date().toISOString();
+                    }
+                    setSaveBtn('saved');
+                } catch(e) {
+                    console.error('autosave error:', e);
+                    setSaveBtn('error');
+                } finally {
+                    isSaving = false;
+                }
+            }, 2000);
         }
 
         function loadState() {
@@ -3008,6 +3106,9 @@
             renderFixedWorks();
             setTimeout(() => {
                 calculateTotals();
+                _history = [];
+                _historyIdx = -1;
+                historyPush('Открыт проект');
                 // Пересохраняем snapshot с округлёнными значениями
                 const rounded = getStateSnapshot();
                 const proj = projects.find(p => p.id === currentProjectId);
@@ -3178,21 +3279,21 @@
             setTimeout(() => el.remove(), 2500);
         }
 
-        function setSaveBtn(state) {
+        function setSaveBtn(st) {
             const btn = document.querySelector('button[onclick="saveProject()"]');
             if (!btn) return;
             const icons = {
-                idle: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Сохранить',
+                idle:    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Сохранить',
+                pending: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Сохраняю...',
                 loading: '<svg style="animation:spin 1s linear infinite;display:inline-block" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Сохраняю...',
-                saved: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Сохранено'
+                saved:   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Сохранено',
+                error:   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Ошибка'
             };
-            btn.innerHTML = icons[state];
-            if (state === 'saved') {
-                btn.style.background = '#10B981';
-                setTimeout(() => { btn.innerHTML = icons.idle; btn.style.background = ''; }, 2000);
-            } else if (state === 'loading') {
-                btn.style.background = '#6B7280';
-            }
+            btn.innerHTML = icons[st] || icons.idle;
+            btn.style.background = '';
+            if (st === 'saved')   { btn.style.background = '#10B981'; setTimeout(() => { btn.innerHTML = icons.idle; btn.style.background = ''; }, 2000); }
+            if (st === 'loading' || st === 'pending') { btn.style.background = '#6B7280'; }
+            if (st === 'error')   { btn.style.background = '#EF4444'; setTimeout(() => { btn.innerHTML = icons.idle; btn.style.background = ''; }, 3000); }
         }
 
         function renderProjectsList() {
@@ -4532,6 +4633,8 @@
                     if (block) {
                         block[field] = newVal;
                         calculateTotals();
+                        historyPush('Изменены часы: ' + block.name);
+                        saveState();
                         renderPages();
                     }
                 }
@@ -4563,6 +4666,8 @@
             if (!page) return;
             page.blocks.push({ id: Date.now(), name, analytics: a, design: d, frontend: fe, backend: be, test: t, difficulty });
             calculateTotals();
+            historyPush('Добавлен блок: ' + name);
+            saveState();
             renderPages();
             // Восстанавливаем фокус на поле имени после ре-рендера
             const newNameEl = document.getElementById('new-block-name-' + pageId);
@@ -4927,6 +5032,116 @@
             }
         }
 
+        // ═══════════════════════════════════════════════
+        // HISTORY (UNDO / REDO)
+        // ═══════════════════════════════════════════════
+        const HISTORY_MAX = 50;
+        let _history = [];      // массив снапшотов {snapshot, label, time}
+        let _historyIdx = -1;   // текущая позиция
+        let _historyLock = false; // чтобы restore не пушил новую запись
+
+        function historyPush(label) {
+            if (_historyLock) return;
+            if (!currentProjectId) return;
+            const snapshot = JSON.parse(JSON.stringify(getStateSnapshot()));
+            // Если мы не в конце — срезаем "будущее"
+            if (_historyIdx < _history.length - 1) {
+                _history = _history.slice(0, _historyIdx + 1);
+            }
+            _history.push({ snapshot, label, time: new Date() });
+            if (_history.length > HISTORY_MAX) _history.shift();
+            _historyIdx = _history.length - 1;
+            updateHistoryUI();
+        }
+
+        function historyRestore(idx) {
+            if (idx < 0 || idx >= _history.length) return;
+            _historyIdx = idx;
+            _historyLock = true;
+            const entry = _history[idx];
+            const s = entry.snapshot;
+            if (s.pages) {
+                state.pages = JSON.parse(JSON.stringify(s.pages));
+            }
+            if (s.percentages) Object.assign(state.percentages, s.percentages);
+            if (s.fixedValues)  Object.assign(state.fixedValues, s.fixedValues);
+            if (s.integrations) Object.assign(state.integrations, s.integrations);
+            if (s.customWorks)  Object.keys(s.customWorks).forEach(k => { if (Array.isArray(s.customWorks[k])) state.customWorks[k] = s.customWorks[k]; });
+            if (s.disabledWorks) {
+                state.disabledWorks.percentages = s.disabledWorks.percentages || [];
+                state.disabledWorks.fixed       = s.disabledWorks.fixed       || [];
+                state.disabledWorks.integrations = s.disabledWorks.integrations || [];
+            }
+            _historyLock = false;
+            renderPages();
+            renderFixedWorks();
+            calculateTotals();
+            updateHistoryUI();
+            scheduleAutosave();
+        }
+
+        function historyUndo() {
+            if (_historyIdx > 0) historyRestore(_historyIdx - 1);
+        }
+
+        function historyRedo() {
+            if (_historyIdx < _history.length - 1) historyRestore(_historyIdx + 1);
+        }
+
+        function updateHistoryUI() {
+            // Кнопки
+            const undoBtn = document.getElementById('undoBtn');
+            const redoBtn = document.getElementById('redoBtn');
+            if (undoBtn) undoBtn.disabled = _historyIdx <= 0;
+            if (redoBtn) redoBtn.disabled = _historyIdx >= _history.length - 1;
+            // Панель
+            renderHistoryList();
+        }
+
+        function renderHistoryList() {
+            const list = document.getElementById('historyList');
+            if (!list) return;
+            if (_history.length === 0) {
+                list.innerHTML = '<div style="padding:20px;color:#94A3B8;font-size:13px;text-align:center;">Изменений пока нет</div>';
+                return;
+            }
+            const icons = {
+                'Добавлен блок':    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+                'Удалён блок':      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+                'Изменены часы':    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+                'default':          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+            };
+            list.innerHTML = [..._history].reverse().map((entry, ri) => {
+                const idx = _history.length - 1 - ri;
+                const isCurrent = idx === _historyIdx;
+                const isFuture  = idx > _historyIdx;
+                const icon = icons[entry.label] || icons.default;
+                const timeStr = entry.time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                return `<div class="history-item ${isCurrent ? 'current' : ''} ${isFuture ? 'future' : ''}" onclick="historyRestore(${idx})">
+                    <span class="history-item-icon">${icon}</span>
+                    <span class="history-item-text">${entry.label}</span>
+                    <span class="history-item-time">${timeStr}</span>
+                </div>`;
+            }).join('');
+        }
+
+        function toggleHistoryPanel() {
+            const panel = document.getElementById('historyPanel');
+            if (panel) panel.classList.toggle('open');
+        }
+
+        // Ctrl+Z / Ctrl+Y
+        document.addEventListener('keydown', (e) => {
+            const tag = document.activeElement?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault(); historyUndo();
+            }
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                e.preventDefault(); historyRedo();
+            }
+        });
+
     </script>
 
     <!-- PDF Import Modal -->
@@ -4951,6 +5166,17 @@
                 <span style="margin-left:auto;font-size:13px;color:#64748B;" id="pdfPagesCount"></span>
             </div>
         </div>
+    </div>
+
+    <!-- History Panel -->
+    <div class="history-panel" id="historyPanel">
+        <div class="history-panel-header">
+            <h3>История изменений</h3>
+            <button onclick="toggleHistoryPanel()" style="background:none;border:none;cursor:pointer;color:#64748B;padding:4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="history-list" id="historyList"></div>
     </div>
 
 </body>
