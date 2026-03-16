@@ -3581,12 +3581,12 @@
             rz('1.1.5', 'Ревью и правки', aReview, assignees.analytics);
             let aIdx = 6;
             (state.customWorks?.analytics || []).forEach(w => { rz('1.1.'+(aIdx++), w.name, w.hours, assignees.analytics); });
-            rz('1.1.'+(aIdx++), 'Согласование аналитики', 24, assignees.client);
+            rz(`1.1.${aIdx++}`, 'Согласование аналитики', 0, assignees.client);
 
             g('1.2', 'Проектирование');
             rz('1.2.1', 'Прототип главной и одной внутренней', ft.analytics, assignees.analytics);
             rz('1.2.2', 'Прототип внутренних страниц', rt.analytics, assignees.analytics);
-            rz('1.2.3', 'Согласование прототипов', 24, assignees.client);
+            rz('1.2.3', 'Согласование прототипов', 0, assignees.client);
 
             g('1.3', 'Дизайн');
             rz('1.3.1', 'Дизайн главной и одной внутренней', ft.design, assignees.design);
@@ -3601,7 +3601,7 @@
             rz('1.3.10', 'Ревью и правки', dReview, assignees.design);
             let dIdx = 11;
             (state.customWorks?.design || []).forEach(w => { rz('1.3.'+(dIdx++), w.name, w.hours, assignees.design); });
-            rz('1.3.'+(dIdx++), 'Согласование дизайна', 24, assignees.client);
+            rz(`1.3.${dIdx++}`, 'Согласование дизайна', 0, assignees.client);
 
             g('1.4', 'Front-end');
             rz('1.4.1', 'Front-end главной и одной внутренней', ft.frontend, assignees.frontend);
@@ -3625,7 +3625,7 @@
             rz('1.5.6', 'Ревью и правки', beRevTotal, assignees.backend);
             let beIdx = 7;
             (state.customWorks?.backend || []).forEach(w => { rz('1.5.'+(beIdx++), w.name, w.hours, assignees.backend); });
-            rz('1.5.'+(beIdx++), 'Согласование разработки', 24, assignees.client);
+            rz(`1.5.${beIdx++}`, 'Согласование разработки', 0, assignees.client);
 
             g('1.6', 'Тестирование');
             rz('1.6.1', 'Тестирование главной и одной внутренней', ft.test, assignees.testing);
@@ -3645,7 +3645,7 @@
             rz('1.7.2', 'Инструкция для контент-менеджера', dwFix('contentInstruction'), assignees.content);
             let cIdx = 3;
             (state.customWorks?.content || []).forEach(w => { rz('1.7.'+(cIdx++), w.name, w.hours, assignees.content); });
-            rz('1.7.'+(cIdx++), 'Финальное согласование', 24, assignees.client);
+            rz(`1.7.${cIdx++}`, 'Финальное согласование', 0, assignees.client);
 
             // Create workbook
             const wb = XLSX.utils.book_new();
