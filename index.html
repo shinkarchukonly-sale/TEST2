@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Калькулятор оценки разработки корпоративного сайта</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233B82F6'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='18' font-family='system-ui,sans-serif' font-weight='700' fill='white'>C</text></svg>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
@@ -1789,7 +1790,9 @@
             percentages: JSON.parse(JSON.stringify(defaultPercentages)),
             fixedValues: JSON.parse(JSON.stringify(defaultFixedValues)),
             integrationsData: JSON.parse(JSON.stringify(defaultIntegrations)),
-            disabledWorks: { percentages: [], fixed: [], integrations: [] }
+            disabledWorks: { percentages: [], fixed: [], integrations: [] },
+            customWorks: { analytics: [], design: [], frontend: [], backend: [], testing: [], content: [] },
+            customNames: {} // переименованные стандартные работы { key: 'новое имя' }
         };
 
         // Применить глобальные настройки в state (для нового проекта — берём из глобальных)
@@ -1798,6 +1801,8 @@
             state.fixedValues      = JSON.parse(JSON.stringify(globalWorksSettings.fixedValues));
             state.integrationsData = JSON.parse(JSON.stringify(globalWorksSettings.integrationsData));
             state.disabledWorks    = { percentages: [], fixed: [], integrations: [] };
+            // Копируем глобальные кастомные работы как стартовые для нового проекта
+            state.customWorks = JSON.parse(JSON.stringify(globalWorksSettings.customWorks));
         }
 
         // State
@@ -4245,6 +4250,7 @@
                 section.percentages.forEach(item => {
                     const isDisabled = globalWorksSettings.disabledWorks ? globalWorksSettings.disabledWorks.percentages.includes(item.key) : false;
                     if (!isDisabled) {
+                        const displayName = globalWorksSettings.customNames[item.key] || item.name;
                         html += `
                             <tr>
                                 <td>
@@ -4252,7 +4258,10 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                     </button>
                                 </td>
-                                <td class="block-name">${item.name} <span style="color: #94A3B8; font-size: 12px;">(${item.hint})</span></td>
+                                <td class="block-name">
+                                    <input type="text" value="${displayName}" style="border:1px solid #E2E8F0;border-radius:4px;padding:3px 8px;width:100%;font-size:13px;" onchange="renameGlobalWork('${item.key}', this.value)">
+                                    <span style="color: #94A3B8; font-size: 11px;">(${item.hint})</span>
+                                </td>
                                 <td style="color: #3B82F6; font-weight: 500;">Процент</td>
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 4px;">
@@ -4270,6 +4279,7 @@
                 section.fixed.forEach(item => {
                     const isDisabled = globalWorksSettings.disabledWorks ? globalWorksSettings.disabledWorks.fixed.includes(item.key) : false;
                     if (!isDisabled) {
+                        const displayName = globalWorksSettings.customNames[item.key] || item.name;
                         html += `
                             <tr>
                                 <td>
@@ -4277,7 +4287,9 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                     </button>
                                 </td>
-                                <td class="block-name">${item.name}</td>
+                                <td class="block-name">
+                                    <input type="text" value="${displayName}" style="border:1px solid #E2E8F0;border-radius:4px;padding:3px 8px;width:100%;font-size:13px;" onchange="renameGlobalWork('${item.key}', this.value)">
+                                </td>
                                 <td style="color: #10B981; font-weight: 500;">Фикс. часы</td>
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 4px;">
@@ -4293,7 +4305,27 @@
 
                 html += `
                             </tbody>
-                        </table>
+                        </table>`;
+
+                // Показываем глобальные кастомные работы этой секции
+                const catKey = { 'Работы по аналитике': 'analytics', 'Работы по дизайну': 'design', 'Работы по Front-end': 'frontend', 'Работы по Back-end': 'backend', 'Работы по тестированию': 'testing', 'Работы по контенту': 'content' }[section.title];
+                const gCustom = (catKey && globalWorksSettings.customWorks[catKey]) || [];
+                if (gCustom.length > 0) {
+                    html += `<table class="admin-table"><tbody>`;
+                    gCustom.forEach(w => {
+                        html += `<tr>
+                            <td><button class="delete-block-btn" onclick="deleteGlobalCustomWork('${catKey}', ${w.id})" title="Удалить">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button></td>
+                            <td class="block-name"><input type="text" value="${w.name}" style="border:1px solid #E2E8F0;border-radius:4px;padding:3px 8px;width:100%;font-size:13px;" onchange="updateGlobalCustomWork('${catKey}', ${w.id}, 'name', this.value)"></td>
+                            <td style="color:#10B981;font-weight:500;">Фикс. часы</td>
+                            <td><div style="display:flex;align-items:center;gap:4px;"><input type="number" value="${w.hours}" min="0" style="width:70px;text-align:right;" onchange="updateGlobalCustomWork('${catKey}', ${w.id}, 'hours', this.value)"><span style="color:#64748B;">ч</span></div></td>
+                        </tr>`;
+                    });
+                    html += `</tbody></table>`;
+                }
+
+                html += `
                         <div style="padding:8px 0 4px;">
                             <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#F8FAFC;border-radius:8px;border:1px dashed #CBD5E1;">
                                 <input type="text" placeholder="Название новой работы..." id="new-work-name-${section.title}"
@@ -4458,7 +4490,8 @@
                 return;
             }
 
-            addCustomWork(category, name, hours);
+            if (!globalWorksSettings.customWorks[category]) globalWorksSettings.customWorks[category] = [];
+            globalWorksSettings.customWorks[category].push({ id: Date.now(), name, hours });
             renderWorksAdminPanel();
         }
 
@@ -4469,6 +4502,22 @@
                 globalWorksSettings.disabledWorks[type].push(key);
                 renderWorksAdminPanel();
             }
+        }
+
+        function renameGlobalWork(key, value) {
+            if (!globalWorksSettings.customNames) globalWorksSettings.customNames = {};
+            globalWorksSettings.customNames[key] = value.trim();
+        }
+
+        function deleteGlobalCustomWork(category, id) {
+            if (!globalWorksSettings.customWorks[category]) return;
+            globalWorksSettings.customWorks[category] = globalWorksSettings.customWorks[category].filter(w => w.id !== id);
+            renderWorksAdminPanel();
+        }
+
+        function updateGlobalCustomWork(category, id, field, value) {
+            const w = (globalWorksSettings.customWorks[category] || []).find(w => w.id === id);
+            if (w) w[field] = field === 'hours' ? (parseFloat(value) || 0) : value;
         }
 
         function disableWorkMain(type, key) {
@@ -4496,7 +4545,9 @@
                 const worksSettings = {
                     percentages: globalWorksSettings.percentages,
                     fixedValues: globalWorksSettings.fixedValues,
-                    integrationsData: globalWorksSettings.integrationsData
+                    integrationsData: globalWorksSettings.integrationsData,
+                    customWorks: globalWorksSettings.customWorks,
+                    customNames: globalWorksSettings.customNames || {}
                 };
                 await sbFetch('POST', 'settings?on_conflict=key', {
                     key: 'works_settings',
@@ -4554,6 +4605,8 @@
                     }
                     if (s.fixedValues)      globalWorksSettings.fixedValues      = { ...globalWorksSettings.fixedValues,      ...s.fixedValues };
                     if (s.integrationsData) globalWorksSettings.integrationsData = { ...globalWorksSettings.integrationsData, ...s.integrationsData };
+                    if (s.customWorks)      Object.keys(s.customWorks).forEach(k => { if (Array.isArray(s.customWorks[k])) globalWorksSettings.customWorks[k] = s.customWorks[k]; });
+                    if (s.customNames)      globalWorksSettings.customNames = { ...globalWorksSettings.customNames, ...s.customNames };
                     return;
                 }
             } catch(e) {
