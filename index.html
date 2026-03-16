@@ -898,6 +898,12 @@
             text-align: center;
         }
 
+        /* Инпуты в колонке названия — по левому краю */
+        .admin-table td.block-name input[type="text"] {
+            text-align: left;
+            width: 100%;
+        }
+
         .admin-table input:focus {
             outline: none;
             border-color: #3B82F6;
@@ -1190,9 +1196,9 @@
         <div class="main-content">
             <div class="header">
                 <div>
-                    <h1>Калькулятор оценки разработки сайта</h1>
-                    <div id="currentProjectLabel" style="font-size:13px;color:#64748B;margin-top:4px;display:none;">
-                        Проект: <span id="currentProjectName" style="font-weight:600;color:#3B82F6;"></span>
+                    <h1 id="calcPageTitle">Калькулятор оценки разработки сайта</h1>
+                    <div id="currentProjectLabel" style="display:none;">
+                        <span id="currentProjectName"></span>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -2238,7 +2244,7 @@
             document.getElementById('designWorksContent').innerHTML = `
                 ${workItem('percentages', 'designOperations',
                     `Операционка <input type="number" value="${state.percentages.designOperations}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.designOperations=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Дизайн × ${state.percentages.designOperations}%`,
+                    `= Σ (блоки+анимации+адаптивы+кит+готовые) × ${state.percentages.designOperations}%`,
                     `<span id="designOperations">0</span>`
                 )}
                 ${workItem('fixed', 'designAnimMain',
@@ -2278,7 +2284,7 @@
                 )}
                 ${workItem('percentages', 'designSupervision',
                     `Авторский надзор <input type="number" value="${state.percentages.designSupervision}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.designSupervision=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ всего Дизайна × ${state.percentages.designSupervision}%`,
+                    `= Σ (блоки+анимации+адаптивы+кит+готовые+операционка) × ${state.percentages.designSupervision}%`,
                     `<span id="designSupervision">0</span>`
                 )}
                 ${renderCustomWorks('design')}
@@ -2299,17 +2305,17 @@
                 )}
                 ${workItem('percentages', 'frontendOperations',
                     `Операционка <input type="number" value="${state.percentages.frontendOperations}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.frontendOperations=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Front-end × ${state.percentages.frontendOperations}%`,
+                    `= Σ (блоки+фиксированные+интеграции) × ${state.percentages.frontendOperations}%`,
                     `<span id="frontendOperations">0</span>`
                 )}
                 ${workItem('percentages', 'frontendReview',
                     `Ревью и курирование <input type="number" value="${state.percentages.frontendReview}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.frontendReview=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Front-end × ${state.percentages.frontendReview}%`,
+                    `= Σ (блоки+фиксированные+интеграции) × ${state.percentages.frontendReview}%`,
                     `<span id="frontendReview">0</span>`
                 )}
                 ${workItem('percentages', 'frontendBugs',
                     `Правка багов <input type="number" value="${state.percentages.frontendBugs}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.frontendBugs=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Front-end × ${state.percentages.frontendBugs}%`,
+                    `= Σ (блоки+фиксированные+интеграции) × ${state.percentages.frontendBugs}%`,
                     `<span id="frontendBugs">0</span>`
                 )}
                 ${workItem('fixed', 'frontendAnimMain',
@@ -2324,7 +2330,7 @@
                 )}
                 ${workItem('percentages', 'frontendIntegration',
                     `Интеграции front и back <input type="number" value="${state.percentages.frontendIntegration}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.frontendIntegration=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Front-end × ${state.percentages.frontendIntegration}%`,
+                    `= Σ (блоки+фиксированные) × ${state.percentages.frontendIntegration}%`,
                     `<span id="frontendIntegration">0</span>`
                 )}
                 ${renderCustomWorks('frontend')}
@@ -2340,17 +2346,17 @@
                 )}
                 ${workItem('percentages', 'backendOperations',
                     `Операционка <input type="number" value="${state.percentages.backendOperations}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.backendOperations=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Back-end × ${state.percentages.backendOperations}%`,
+                    `= Σ (блоки+фиксированные) × ${state.percentages.backendOperations}%`,
                     `<span id="backendOperations">0</span>`
                 )}
                 ${workItem('percentages', 'backendReview',
                     `Ревью и курирование <input type="number" value="${state.percentages.backendReview}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.backendReview=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Back-end × ${state.percentages.backendReview}%`,
+                    `= Σ (блоки+фиксированные) × ${state.percentages.backendReview}%`,
                     `<span id="backendReview">0</span>`
                 )}
                 ${workItem('percentages', 'backendBugs',
                     `Правка багов <input type="number" value="${state.percentages.backendBugs}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.backendBugs=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Back-end × ${state.percentages.backendBugs}%`,
+                    `= Σ (блоки+фиксированные) × ${state.percentages.backendBugs}%`,
                     `<span id="backendBugs">0</span>`
                 )}
                 ${workItem('fixed', 'backendMultilang',
@@ -2530,34 +2536,41 @@
             setText('analyticsPreparation', analyticsPreparation.toFixed(0));
 
             // Design works
-            const designOperations  = dwPct(blocksTotal.design, 'designOperations');
-            const designUIKit       = dwPct(blocksTotal.design, 'designUIKit');
-            const designUsedBlocks  = dwPct(blocksTotal.design, 'designUsedBlocks');
-            const designBeforeSupervision = blocksTotal.design + designOperations + dwFix('designAnimMain') + dwFix('designAnimInner') + dwFix('designAdaptMain') + dwFix('designAdaptAll') + dwFix('designUIKitMain') + designUIKit + designUsedBlocks;
-            const designSupervision = dwPct(designBeforeSupervision, 'designSupervision');
-            fixedWorks.design = designOperations + dwFix('designAnimMain') + dwFix('designAnimInner') + dwFix('designAdaptMain') + dwFix('designAdaptAll') + dwFix('designUIKitMain') + designUIKit + designUsedBlocks + designSupervision;
+            // Сначала считаем фиксированные и некурирующие проценты
+            const designUIKit      = dwPct(blocksTotal.design, 'designUIKit');
+            const designUsedBlocks = dwPct(blocksTotal.design, 'designUsedBlocks');
+            const designFixedSum   = dwFix('designAnimMain') + dwFix('designAnimInner') + dwFix('designAdaptMain') + dwFix('designAdaptAll') + dwFix('designUIKitMain');
+            // База для операционки и надзора = блоки + фиксированные + UIKit + готовые блоки
+            const designBase       = blocksTotal.design + designFixedSum + designUIKit + designUsedBlocks;
+            const designOperations = dwPct(designBase, 'designOperations');
+            const designSupervision = dwPct(designBase + designOperations, 'designSupervision');
+            fixedWorks.design = designOperations + designFixedSum + designUIKit + designUsedBlocks + designSupervision;
             setText('designOperations', designOperations.toFixed(0));
             setText('designUIKit', designUIKit.toFixed(0));
             setText('designUsedBlocks', designUsedBlocks.toFixed(0));
             setText('designSupervision', designSupervision.toFixed(0));
 
-            // Frontend works
-            const frontendOperations  = dwPct(blocksTotal.frontend, 'frontendOperations');
-            const frontendReview      = dwPct(blocksTotal.frontend, 'frontendReview');
-            const frontendBugs        = dwPct(blocksTotal.frontend, 'frontendBugs');
-            const frontendIntegration = dwPct(blocksTotal.frontend, 'frontendIntegration');
-            fixedWorks.frontend = dwFix('frontendSetup') + dwFix('frontendPrototypes') + frontendOperations + frontendReview + frontendBugs + dwFix('frontendAnimMain') + dwFix('frontendAnimInner') + frontendIntegration;
+            // Frontend works — проценты считаются от (блоки + фиксированные)
+            const frontendFixedSum    = dwFix('frontendSetup') + dwFix('frontendPrototypes') + dwFix('frontendAnimMain') + dwFix('frontendAnimInner') + dwFix('backendMultilangFront') + dwFix('backendSearchFront');
+            const frontendBase        = blocksTotal.frontend + frontendFixedSum;
+            const frontendIntegration = dwPct(frontendBase, 'frontendIntegration');
+            const frontendBase2       = frontendBase + frontendIntegration;
+            const frontendOperations  = dwPct(frontendBase2, 'frontendOperations');
+            const frontendReview      = dwPct(frontendBase2, 'frontendReview');
+            const frontendBugs        = dwPct(frontendBase2, 'frontendBugs');
+            fixedWorks.frontend = frontendFixedSum + frontendIntegration + frontendOperations + frontendReview + frontendBugs;
             setText('frontendOperations', frontendOperations.toFixed(0));
             setText('frontendReview', frontendReview.toFixed(0));
             setText('frontendBugs', frontendBugs.toFixed(0));
             setText('frontendIntegration', frontendIntegration.toFixed(0));
 
-            // Backend works
-            const backendOperations = dwPct(blocksTotal.backend, 'backendOperations');
-            const backendReview     = dwPct(blocksTotal.backend, 'backendReview');
-            const backendBugs       = dwPct(blocksTotal.backend, 'backendBugs');
-            fixedWorks.backend  = dwFix('backendSetup') + backendOperations + backendReview + backendBugs + dwFix('backendMultilang') + dwFix('backendSearch');
-            fixedWorks.frontend += dwFix('backendMultilangFront') + dwFix('backendSearchFront');
+            // Backend works — проценты считаются от (блоки + фиксированные)
+            const backendFixedSum  = dwFix('backendSetup') + dwFix('backendMultilang') + dwFix('backendSearch');
+            const backendBase      = blocksTotal.backend + backendFixedSum;
+            const backendOperations = dwPct(backendBase, 'backendOperations');
+            const backendReview     = dwPct(backendBase, 'backendReview');
+            const backendBugs       = dwPct(backendBase, 'backendBugs');
+            fixedWorks.backend  = backendFixedSum + backendOperations + backendReview + backendBugs;
             setText('backendOperations', backendOperations.toFixed(0));
             setText('backendReview', backendReview.toFixed(0));
             setText('backendBugs', backendBugs.toFixed(0));
@@ -2912,11 +2925,13 @@
             const analyticsFix = p(bt.a,'analyticsCuration') + p(bt.a,'analyticsOperations') + p(bt.a,'analyticsPreparation')
                 + f('analyticsBenchmark') + f('analyticsBrief') + f('analyticsRequirements') + f('analyticsStructure');
 
-            const designBeforeSup = bt.d + p(bt.d,'designOperations') + p(bt.d,'designUIKit') + p(bt.d,'designUsedBlocks')
-                + f('designAnimMain') + f('designAnimInner') + f('designAdaptMain') + f('designAdaptAll') + f('designUIKitMain');
-            const designFix = p(bt.d,'designOperations') + p(bt.d,'designUIKit') + p(bt.d,'designUsedBlocks')
-                + f('designAnimMain') + f('designAnimInner') + f('designAdaptMain') + f('designAdaptAll') + f('designUIKitMain')
-                + Math.round(designBeforeSup * (pct.designSupervision||0) / 100);
+            const designFixedSum2 = f('designAnimMain') + f('designAnimInner') + f('designAdaptMain') + f('designAdaptAll') + f('designUIKitMain');
+            const designUIKit2    = p(bt.d,'designUIKit');
+            const designUsed2     = p(bt.d,'designUsedBlocks');
+            const designBase2     = bt.d + designFixedSum2 + designUIKit2 + designUsed2;
+            const designOps2      = Math.round(designBase2 * (pct.designOperations||0) / 100);
+            const designSup2      = Math.round((designBase2 + designOps2) * (pct.designSupervision||0) / 100);
+            const designFix       = designOps2 + designFixedSum2 + designUIKit2 + designUsed2 + designSup2;
 
             const frontendFix = f('frontendSetup') + f('frontendPrototypes')
                 + p(bt.fe,'frontendOperations') + p(bt.fe,'frontendReview')
@@ -3241,14 +3256,13 @@
         }
 
         function updateCurrentProjectLabel() {
-            const label = document.getElementById('currentProjectLabel');
-            const nameEl = document.getElementById('currentProjectName');
-            if (!label || !nameEl) return;
+            const titleEl = document.getElementById('calcPageTitle');
+            if (!titleEl) return;
             if (currentProjectId) {
                 const proj = projects.find(p => p.id === currentProjectId);
-                if (proj) { label.style.display = 'block'; nameEl.textContent = proj.name; return; }
+                if (proj) { titleEl.textContent = proj.name; return; }
             }
-            label.style.display = 'none';
+            titleEl.textContent = 'Калькулятор оценки разработки сайта';
         }
 
         function switchView(view) {
@@ -4376,6 +4390,7 @@
                 const isDisabled = gDW.integrations.includes(key);
                 if (!isDisabled) {
                     const intg = globalWorksSettings.integrationsData[key];
+                    const displayName = (globalWorksSettings.customNames && globalWorksSettings.customNames[key]) || integrationNames[key] || key;
                     html += `
                         <tr>
                             <td>
@@ -4383,7 +4398,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                 </button>
                             </td>
-                            <td class="block-name">${integrationNames[key]}</td>
+                            <td class="block-name"><input type="text" value="${displayName}" style="border:1px solid #E2E8F0;border-radius:4px;padding:3px 8px;width:100%;font-size:13px;text-align:left;" onchange="renameGlobalWork('${key}', this.value)"></td>
                             <td><input type="number" step="1" value="${intg.analytics}" onchange="updateIntegrationValue('${key}', 'analytics', this.value)"></td>
                             <td><input type="number" step="1" value="${intg.design}" onchange="updateIntegrationValue('${key}', 'design', this.value)"></td>
                             <td><input type="number" step="1" value="${intg.frontend}" onchange="updateIntegrationValue('${key}', 'frontend', this.value)"></td>
@@ -4397,6 +4412,19 @@
             html += `
                         </tbody>
                     </table>
+                    <div style="padding:8px 0 4px;">
+                        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#F8FAFC;border-radius:8px;border:1px dashed #CBD5E1;">
+                            <input type="text" placeholder="Название интеграции..." id="new-intg-name"
+                                style="flex:2;border:1px solid #E2E8F0;border-radius:6px;padding:6px 10px;font-size:13px;outline:none;"
+                                onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#E2E8F0'">
+                            <input type="number" placeholder="Ан" id="new-intg-a" min="0" style="width:52px;border:1px solid #E2E8F0;border-radius:6px;padding:6px 8px;font-size:13px;outline:none;text-align:center;" onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#E2E8F0'">
+                            <input type="number" placeholder="Ди" id="new-intg-d" min="0" style="width:52px;border:1px solid #E2E8F0;border-radius:6px;padding:6px 8px;font-size:13px;outline:none;text-align:center;" onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#E2E8F0'">
+                            <input type="number" placeholder="FE" id="new-intg-fe" min="0" style="width:52px;border:1px solid #E2E8F0;border-radius:6px;padding:6px 8px;font-size:13px;outline:none;text-align:center;" onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#E2E8F0'">
+                            <input type="number" placeholder="BE" id="new-intg-be" min="0" style="width:52px;border:1px solid #E2E8F0;border-radius:6px;padding:6px 8px;font-size:13px;outline:none;text-align:center;" onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#E2E8F0'">
+                            <input type="number" placeholder="Te" id="new-intg-t" min="0" style="width:52px;border:1px solid #E2E8F0;border-radius:6px;padding:6px 8px;font-size:13px;outline:none;text-align:center;" onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#E2E8F0'">
+                            <button onclick="addNewIntegration()" style="background:#3B82F6;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0;">+ Добавить</button>
+                        </div>
+                    </div>
                 </div>
             `;
 
@@ -4502,6 +4530,23 @@
                 globalWorksSettings.disabledWorks[type].push(key);
                 renderWorksAdminPanel();
             }
+        }
+
+        function addNewIntegration() {
+            const nameEl = document.getElementById('new-intg-name');
+            const name = nameEl ? nameEl.value.trim() : '';
+            if (!name) { if (nameEl) { nameEl.focus(); nameEl.style.borderColor = '#EF4444'; } return; }
+            const a  = parseFloat(document.getElementById('new-intg-a')?.value)  || 0;
+            const d  = parseFloat(document.getElementById('new-intg-d')?.value)  || 0;
+            const fe = parseFloat(document.getElementById('new-intg-fe')?.value) || 0;
+            const be = parseFloat(document.getElementById('new-intg-be')?.value) || 0;
+            const t  = parseFloat(document.getElementById('new-intg-t')?.value)  || 0;
+            // Генерируем уникальный ключ
+            const key = 'custom_' + Date.now();
+            globalWorksSettings.integrationsData[key] = { enabled: false, analytics: a, design: d, frontend: fe, backend: be, test: t };
+            if (!globalWorksSettings.customNames) globalWorksSettings.customNames = {};
+            globalWorksSettings.customNames[key] = name;
+            renderWorksAdminPanel();
         }
 
         function renameGlobalWork(key, value) {
