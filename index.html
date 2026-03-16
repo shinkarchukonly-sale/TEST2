@@ -1784,6 +1784,22 @@
             chat: { enabled: false, analytics: 0, design: 0, frontend: 16, backend: 1, test: 0.2 }
         };
 
+        // Глобальные настройки работ — загружаются из Supabase/localStorage        // НЕ изменяются при работе с проектом, только через Админку работ
+        let globalWorksSettings = {
+            percentages: JSON.parse(JSON.stringify(defaultPercentages)),
+            fixedValues: JSON.parse(JSON.stringify(defaultFixedValues)),
+            integrationsData: JSON.parse(JSON.stringify(defaultIntegrations)),
+            disabledWorks: { percentages: [], fixed: [], integrations: [] }
+        };
+
+        // Применить глобальные настройки в state (для нового проекта — берём из глобальных)
+        function applyGlobalWorksToState() {
+            state.percentages      = JSON.parse(JSON.stringify(globalWorksSettings.percentages));
+            state.fixedValues      = JSON.parse(JSON.stringify(globalWorksSettings.fixedValues));
+            state.integrationsData = JSON.parse(JSON.stringify(globalWorksSettings.integrationsData));
+            state.disabledWorks    = { percentages: [], fixed: [], integrations: [] };
+        }
+
         // State
         let state = {
             pages: [],
@@ -1820,6 +1836,8 @@
         async function init() {
             try {
                 await loadWorksData();
+                // Применяем глобальные настройки в state (до открытия проекта)
+                applyGlobalWorksToState();
                 loadState();
 
                 // Загружаем проекты сразу — нужны для восстановления последнего открытого
@@ -2183,12 +2201,12 @@
                     `<span id="analyticsOperations">0</span>`
                 )}
                 ${workItem('fixed', 'analyticsBenchmark',
-                    'Анализ конкурентного окружения. Бенчмаркинг',
+                    'Анализ конкурентного окружения',
                     'Фиксировано',
                     `<input type="number" value="${state.fixedValues.analyticsBenchmark || 32}" min="0" style="width:70px;text-align:right;" onchange="state.fixedValues.analyticsBenchmark=parseFloat(this.value);calculateTotals();saveState()">`
                 )}
                 ${workItem('fixed', 'analyticsBrief',
-                    'Подготовка брифа и интервьюирование стейкхолдеров',
+                    'Подготовка брифа',
                     'Фиксировано',
                     `<input type="number" value="${state.fixedValues.analyticsBrief || 16}" min="0" style="width:70px;text-align:right;" onchange="state.fixedValues.analyticsBrief=parseFloat(this.value);calculateTotals();saveState()">`
                 )}
@@ -2219,12 +2237,12 @@
                     `<span id="designOperations">0</span>`
                 )}
                 ${workItem('fixed', 'designAnimMain',
-                    'Анимации главной (прелоадер/тз на анимацию)',
+                    'Анимации главной',
                     'Фиксировано',
                     `<input type="number" value="${state.fixedValues.designAnimMain}" min="0" style="width:70px;text-align:right;" onchange="state.fixedValues.designAnimMain=parseFloat(this.value);calculateTotals();saveState()">`
                 )}
                 ${workItem('fixed', 'designAnimInner',
-                    'Анимация внутренних (тз на анимацию)',
+                    'Анимация внутренних',
                     'Фиксировано',
                     `<input type="number" value="${state.fixedValues.designAnimInner}" min="0" style="width:70px;text-align:right;" onchange="state.fixedValues.designAnimInner=parseFloat(this.value);calculateTotals();saveState()">`
                 )}
@@ -2265,7 +2283,7 @@
             // Frontend Works
             document.getElementById('frontendWorksContent').innerHTML = `
                 ${workItem('fixed', 'frontendSetup',
-                    'Разворачивание проекта, перенос базовой логики',
+                    'Разворачивание проекта',
                     'Фиксировано',
                     `<input type="number" value="${state.fixedValues.frontendSetup}" min="0" style="width:70px;text-align:right;" onchange="state.fixedValues.frontendSetup=parseFloat(this.value);calculateTotals();saveState()">`
                 )}
@@ -2311,7 +2329,7 @@
             // Backend Works
             document.getElementById('backendWorksContent').innerHTML = `
                 ${workItem('fixed', 'backendSetup',
-                    'Разворачивание проекта, перенос базовой логики',
+                    'Разворачивание проекта',
                     'Фиксировано',
                     `<input type="number" value="${state.fixedValues.backendSetup}" min="0" style="width:70px;text-align:right;" onchange="state.fixedValues.backendSetup=parseFloat(this.value);calculateTotals();saveState()">`
                 )}
@@ -2397,12 +2415,12 @@
                     `<input type="number" value="${state.fixedValues.testingDesign}" min="0" style="width:70px;text-align:right;" onchange="state.fixedValues.testingDesign=parseFloat(this.value);calculateTotals();saveState()">`
                 )}
                 ${workItem('fixed', 'testingPerformance',
-                    'Тестирование производительности (google page inside)',
+                    'Тест производительности',
                     'Фиксировано',
                     `<input type="number" value="${state.fixedValues.testingPerformance}" min="0" style="width:70px;text-align:right;" onchange="state.fixedValues.testingPerformance=parseFloat(this.value);calculateTotals();saveState()">`
                 )}
                 ${workItem('fixed', 'testingContent',
-                    'Тестирование собранных страниц с контентом',
+                    'Тест с контентом',
                     'Фиксировано',
                     `<input type="number" value="${state.fixedValues.testingContent}" min="0" style="width:70px;text-align:right;" onchange="state.fixedValues.testingContent=parseFloat(this.value);calculateTotals();saveState()">`
                 )}
@@ -2423,7 +2441,7 @@
                     `<input type="number" value="${state.fixedValues.contentInstruction}" min="0" style="width:70px;text-align:right;" onchange="state.fixedValues.contentInstruction=parseFloat(this.value);calculateTotals();saveState()">`
                 )}
                 ${workItem('fixed', 'contentTZ',
-                    'Написание Технического задания',
+                    'Написание ТЗ',
                     '4 (Анал) + 8 (Front) + 8 (Back) + 4 (Test) + 8 (Контент)',
                     `<input type="number" value="${state.fixedValues.contentTZ}" min="0" style="width:70px;text-align:right;" onchange="state.fixedValues.contentTZ=parseFloat(this.value);calculateTotals();saveState()">`
                 )}
@@ -3029,10 +3047,11 @@
             const name = prompt('Название нового проекта:', 'Проект ' + (projects.length + 1));
             if (!name) return;
 
-            // Reset calculator state
+            // Reset calculator state — берём настройки работ из глобальных
             state.pages = [];
             state.customWorks = { analytics: [], design: [], frontend: [], backend: [], testing: [], content: [], integrations: [] };
             state.integrations = { crm: false, maps: false, b24: false, hh: false, email: false, metrics: false, chat: false };
+            applyGlobalWorksToState();
 
             isSaving = true;
             try {
@@ -4224,7 +4243,7 @@
 
                 // Percentage works
                 section.percentages.forEach(item => {
-                    const isDisabled = state.disabledWorks.percentages.includes(item.key);
+                    const isDisabled = globalWorksSettings.disabledWorks ? globalWorksSettings.disabledWorks.percentages.includes(item.key) : false;
                     if (!isDisabled) {
                         html += `
                             <tr>
@@ -4237,7 +4256,7 @@
                                 <td style="color: #3B82F6; font-weight: 500;">Процент</td>
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 4px;">
-                                        <input type="number" step="1" value="${state.percentages[item.key]}" 
+                                        <input type="number" step="1" value="${globalWorksSettings.percentages[item.key]}" 
                                             onchange="updateWorksPercentage('${item.key}', this.value)">
                                         <span style="color: #64748B;">%</span>
                                     </div>
@@ -4249,7 +4268,7 @@
 
                 // Fixed hours works
                 section.fixed.forEach(item => {
-                    const isDisabled = state.disabledWorks.fixed.includes(item.key);
+                    const isDisabled = globalWorksSettings.disabledWorks ? globalWorksSettings.disabledWorks.fixed.includes(item.key) : false;
                     if (!isDisabled) {
                         html += `
                             <tr>
@@ -4262,7 +4281,7 @@
                                 <td style="color: #10B981; font-weight: 500;">Фикс. часы</td>
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 4px;">
-                                        <input type="number" step="1" value="${state.fixedValues[item.key]}" 
+                                        <input type="number" step="1" value="${globalWorksSettings.fixedValues[item.key]}" 
                                             onchange="updateWorksFixed('${item.key}', this.value)">
                                         <span style="color: #64748B;">ч</span>
                                     </div>
@@ -4320,10 +4339,11 @@
                 chat: 'Чат'
             };
 
-            Object.keys(state.integrationsData).forEach(key => {
-                const isDisabled = state.disabledWorks.integrations.includes(key);
+            Object.keys(globalWorksSettings.integrationsData).forEach(key => {
+                const gDW = globalWorksSettings.disabledWorks || { percentages: [], fixed: [], integrations: [] };
+                const isDisabled = gDW.integrations.includes(key);
                 if (!isDisabled) {
-                    const intg = state.integrationsData[key];
+                    const intg = globalWorksSettings.integrationsData[key];
                     html += `
                         <tr>
                             <td>
@@ -4349,9 +4369,8 @@
             `;
 
             // Disabled works section (to restore)
-            const hasDisabled = state.disabledWorks.percentages.length > 0 || 
-                               state.disabledWorks.fixed.length > 0 || 
-                               state.disabledWorks.integrations.length > 0;
+            const gDW2 = globalWorksSettings.disabledWorks || { percentages: [], fixed: [], integrations: [] };
+            const hasDisabled = gDW2.percentages.length > 0 || gDW2.fixed.length > 0 || gDW2.integrations.length > 0;
             
             if (hasDisabled) {
                 html += `
@@ -4360,7 +4379,6 @@
                         <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 16px;">
                 `;
                 
-                // Get all work names for display
                 const allWorks = {
                     percentages: {
                         analyticsCuration: 'Курирование', analyticsOperations: 'Операционка (аналитика)', 
@@ -4387,13 +4405,13 @@
                     integrations: integrationNames
                 };
 
-                state.disabledWorks.percentages.forEach(key => {
+                gDW2.percentages.forEach(key => {
                     html += `<button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="restoreWork('percentages', '${key}')">${allWorks.percentages[key] || key}</button>`;
                 });
-                state.disabledWorks.fixed.forEach(key => {
+                gDW2.fixed.forEach(key => {
                     html += `<button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="restoreWork('fixed', '${key}')">${allWorks.fixed[key] || key}</button>`;
                 });
-                state.disabledWorks.integrations.forEach(key => {
+                gDW2.integrations.forEach(key => {
                     html += `<button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="restoreWork('integrations', '${key}')">${allWorks.integrations[key] || key}</button>`;
                 });
 
@@ -4407,15 +4425,15 @@
         }
 
         function updateWorksPercentage(key, value) {
-            state.percentages[key] = parseFloat(value) || 0;
+            globalWorksSettings.percentages[key] = parseFloat(value) || 0;
         }
 
         function updateWorksFixed(key, value) {
-            state.fixedValues[key] = parseFloat(value) || 0;
+            globalWorksSettings.fixedValues[key] = parseFloat(value) || 0;
         }
 
         function updateIntegrationValue(integration, field, value) {
-            state.integrationsData[integration][field] = parseFloat(value) || 0;
+            globalWorksSettings.integrationsData[integration][field] = parseFloat(value) || 0;
         }
 
         function addWorkToSection(sectionTitle) {
@@ -4444,6 +4462,15 @@
             renderWorksAdminPanel();
         }
 
+        // disableWork — для Админки работ (глобальные настройки)
+        function disableWork(type, key) {
+            if (!globalWorksSettings.disabledWorks) globalWorksSettings.disabledWorks = { percentages: [], fixed: [], integrations: [] };
+            if (!globalWorksSettings.disabledWorks[type].includes(key)) {
+                globalWorksSettings.disabledWorks[type].push(key);
+                renderWorksAdminPanel();
+            }
+        }
+
         function disableWorkMain(type, key) {
             if (!state.disabledWorks[type].includes(key)) {
                 state.disabledWorks[type].push(key);
@@ -4454,9 +4481,10 @@
         }
 
         function restoreWork(type, key) {
-            const index = state.disabledWorks[type].indexOf(key);
+            if (!globalWorksSettings.disabledWorks) return;
+            const index = globalWorksSettings.disabledWorks[type].indexOf(key);
             if (index > -1) {
-                state.disabledWorks[type].splice(index, 1);
+                globalWorksSettings.disabledWorks[type].splice(index, 1);
                 renderWorksAdminPanel();
             }
         }
@@ -4466,24 +4494,20 @@
             if (btn) { btn.disabled = true; btn.textContent = 'Сохраняю...'; }
             try {
                 const worksSettings = {
-                    percentages: state.percentages,
-                    fixedValues: state.fixedValues,
-                    integrationsData: state.integrationsData
-                    // disabledWorks НЕ сохраняем глобально — это настройка каждого проекта отдельно
+                    percentages: globalWorksSettings.percentages,
+                    fixedValues: globalWorksSettings.fixedValues,
+                    integrationsData: globalWorksSettings.integrationsData
                 };
                 await sbFetch('POST', 'settings?on_conflict=key', {
                     key: 'works_settings',
                     value: worksSettings,
                     updated_at: new Date().toISOString()
                 });
-                localStorage.setItem('calculatorPercentages', JSON.stringify(state.percentages));
-                localStorage.setItem('calculatorFixedValues', JSON.stringify(state.fixedValues));
-                localStorage.setItem('calculatorIntegrationsData', JSON.stringify(state.integrationsData));
+                localStorage.setItem('calculatorPercentages', JSON.stringify(globalWorksSettings.percentages));
+                localStorage.setItem('calculatorFixedValues', JSON.stringify(globalWorksSettings.fixedValues));
+                localStorage.setItem('calculatorIntegrationsData', JSON.stringify(globalWorksSettings.integrationsData));
                 localStorage.removeItem('calculatorDisabledWorks');
-                renderFixedWorks();
-                calculateTotals();
-                saveState();
-                showSuccess('Настройки блоков сохранены для всех!');
+                showSuccess('Настройки работ сохранены! Новые проекты будут использовать эти значения.');
             } catch (e) {
                 showError('Ошибка сохранения настроек.', e.message);
             } finally {
@@ -4493,18 +4517,16 @@
 
         async function resetWorksData() {
             if (confirm('Сбросить все работы к исходным значениям? Это действие нельзя отменить.')) {
-                state.percentages = JSON.parse(JSON.stringify(defaultPercentages));
-                state.fixedValues = JSON.parse(JSON.stringify(defaultFixedValues));
-                state.integrationsData = JSON.parse(JSON.stringify(defaultIntegrations));
-                state.disabledWorks = { percentages: [], fixed: [], integrations: [] };
+                globalWorksSettings.percentages    = JSON.parse(JSON.stringify(defaultPercentages));
+                globalWorksSettings.fixedValues    = JSON.parse(JSON.stringify(defaultFixedValues));
+                globalWorksSettings.integrationsData = JSON.parse(JSON.stringify(defaultIntegrations));
                 try {
                     await sbFetch('POST', 'settings?on_conflict=key', {
                         key: 'works_settings',
                         value: {
-                            percentages: state.percentages,
-                            fixedValues: state.fixedValues,
-                            integrationsData: state.integrationsData,
-                            disabledWorks: state.disabledWorks
+                            percentages: globalWorksSettings.percentages,
+                            fixedValues: globalWorksSettings.fixedValues,
+                            integrationsData: globalWorksSettings.integrationsData
                         },
                         updated_at: new Date().toISOString()
                     });
@@ -4514,9 +4536,6 @@
                 localStorage.removeItem('calculatorIntegrationsData');
                 localStorage.removeItem('calculatorDisabledWorks');
                 renderWorksAdminPanel();
-                renderFixedWorks();
-                calculateTotals();
-                saveState();
                 showSuccess('Работы сброшены к исходным значениям');
             }
         }
@@ -4528,15 +4547,13 @@
                 if (rows && rows.length > 0 && rows[0].value) {
                     const s = rows[0].value;
                     if (s.percentages) {
-                        state.percentages = { ...state.percentages, ...s.percentages };
-                        // designUsedBlocks должен быть положительным (плюс, не скидка)
-                        if (state.percentages.designUsedBlocks < 0) {
-                            state.percentages.designUsedBlocks = Math.abs(state.percentages.designUsedBlocks);
+                        globalWorksSettings.percentages = { ...globalWorksSettings.percentages, ...s.percentages };
+                        if (globalWorksSettings.percentages.designUsedBlocks < 0) {
+                            globalWorksSettings.percentages.designUsedBlocks = Math.abs(globalWorksSettings.percentages.designUsedBlocks);
                         }
                     }
-                    if (s.fixedValues)      state.fixedValues      = { ...state.fixedValues,      ...s.fixedValues };
-                    if (s.integrationsData) state.integrationsData = { ...state.integrationsData, ...s.integrationsData };
-                    // disabledWorks НЕ грузим из глобальных настроек — это per-project
+                    if (s.fixedValues)      globalWorksSettings.fixedValues      = { ...globalWorksSettings.fixedValues,      ...s.fixedValues };
+                    if (s.integrationsData) globalWorksSettings.integrationsData = { ...globalWorksSettings.integrationsData, ...s.integrationsData };
                     return;
                 }
             } catch(e) {
@@ -4546,10 +4563,9 @@
                 const savedPercentages      = localStorage.getItem('calculatorPercentages');
                 const savedFixedValues      = localStorage.getItem('calculatorFixedValues');
                 const savedIntegrationsData = localStorage.getItem('calculatorIntegrationsData');
-                if (savedPercentages)      state.percentages      = { ...state.percentages,      ...JSON.parse(savedPercentages) };
-                if (savedFixedValues)      state.fixedValues      = { ...state.fixedValues,      ...JSON.parse(savedFixedValues) };
-                if (savedIntegrationsData) state.integrationsData = { ...state.integrationsData, ...JSON.parse(savedIntegrationsData) };
-                // disabledWorks из localStorage тоже не грузим
+                if (savedPercentages)      globalWorksSettings.percentages      = { ...globalWorksSettings.percentages,      ...JSON.parse(savedPercentages) };
+                if (savedFixedValues)      globalWorksSettings.fixedValues      = { ...globalWorksSettings.fixedValues,      ...JSON.parse(savedFixedValues) };
+                if (savedIntegrationsData) globalWorksSettings.integrationsData = { ...globalWorksSettings.integrationsData, ...JSON.parse(savedIntegrationsData) };
             } catch(e) {
                 console.error('Error loading works data from localStorage:', e);
             }
