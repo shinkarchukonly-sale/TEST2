@@ -1764,20 +1764,37 @@
                 await loadWorksData();
                 loadState();
                 renderFixedWorks();
-                if (!state.pages || state.pages.length === 0) {
-                    state._skipCalculate = true;
-                    addPage('Главная страница');
-                    addPage('О компании');
-                    state._skipCalculate = false;
+
+                // Загружаем проекты сразу — нужны для восстановления последнего открытого
+                await loadProjects().catch(e => console.error('loadProjects error:', e));
+
+                // Восстанавливаем последний открытый проект
+                const lastProjectId = localStorage.getItem('lastOpenedProjectId');
+                if (lastProjectId && projects.length > 0) {
+                    const proj = projects.find(p => String(p.id) === String(lastProjectId));
+                    if (proj) {
+                        openProject(proj.id);
+                        return;
+                    }
                 }
-                renderPages();
-                calculateTotals();
-                updateCurrentProjectLabel();
+
+                // Нет последнего проекта — показываем список если есть проекты, иначе пустой шаблон
+                if (projects.length > 0) {
+                    switchView('projects');
+                } else {
+                    if (!state.pages || state.pages.length === 0) {
+                        state._skipCalculate = true;
+                        addPage('Главная страница');
+                        addPage('О компании');
+                        state._skipCalculate = false;
+                    }
+                    renderPages();
+                    calculateTotals();
+                    updateCurrentProjectLabel();
+                }
             } catch(e) {
                 console.error('init error:', e);
             }
-            // Load projects in background — не блокируем инициализацию
-            loadProjects().catch(e => console.error('loadProjects error:', e));
         }
 
         // Page management
@@ -2925,6 +2942,7 @@
                 });
                 const row = Array.isArray(rows) ? rows[0] : rows;
                 currentProjectId = row.id;
+                localStorage.setItem('lastOpenedProjectId', String(row.id));
                 projects.unshift({
                     id: row.id,
                     name: row.name,
@@ -2955,6 +2973,7 @@
             const proj = projects.find(p => p.id === id);
             if (!proj) return;
             currentProjectId = id;
+            localStorage.setItem('lastOpenedProjectId', String(id));
             const s = proj.snapshot;
             if (s.pages) {
                 // Округляем все значения блоков до целых при загрузке
@@ -3043,6 +3062,7 @@
                 projects = projects.filter(p => p.id !== id);
                 if (currentProjectId === id) {
                     currentProjectId = null;
+                    localStorage.removeItem('lastOpenedProjectId');
                     updateCurrentProjectLabel();
                 }
                 updateProjectsCount();
