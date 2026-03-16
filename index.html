@@ -3529,17 +3529,19 @@
             };
 
             const rows = [];
-            // rz — всегда выводит (сохраняет WBS нумерацию), 0 → '00'
+            // rz — выводит только если часы > 0
             const rz = (wbs, name, hours, assignee='') => {
-                rows.push([wbs, name||'', hours > 0 ? Math.round(hours) : '00', assignee]);
+                if (hours <= 0) return;
+                rows.push([wbs, name||'', Math.round(hours), assignee]);
             };
-            // rzf — фиксированная работа: если в disabledWorks.fixed — пропускаем полностью
+            // rzf — фиксированная работа: если в disabledWorks.fixed или часы 0 — пропускаем
             const rzf = (wbs, name, key, assignee='') => {
                 if (dw.fixed.includes(key)) return;
                 const h = Math.round(state.fixedValues[key] || 0);
-                rows.push([wbs, name||'', h > 0 ? h : '00', assignee]);
+                if (h <= 0) return;
+                rows.push([wbs, name||'', h, assignee]);
             };
-            // g — группа
+            // g — группа (всегда выводится, GanttPRO требует родителя)
             const g = (wbs, name) => {
                 rows.push([wbs, name||'', '00', '']);
             };
