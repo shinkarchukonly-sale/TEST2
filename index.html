@@ -3537,7 +3537,9 @@
                 rows.push([wbs, name||'', '00', '']);
             };
 
-            // Нет верхнего уровня "1 Планирование" — сразу секции
+            // Корневой элемент обязателен для GanttPRO (иначе 1.1, 1.2 не принимаются)
+            const projName = currentProjectId ? (projects.find(p=>p.id===currentProjectId)?.name || 'Проект') : 'Проект';
+            rows.push(['1', projName, '00', '']);
 
             g('1.1', 'Предпроектная аналитика');
             rz('1.1.1', 'Анализ конкурентного окружения', dwFix('analyticsBenchmark'), assignees.analytics);
@@ -3621,8 +3623,7 @@
                 { wch: 25 }   // D - assignee
             ];
             XLSX.utils.book_append_sheet(wb, ws, 'Оценка');
-            const projName = currentProjectId ? (projects.find(p=>p.id===currentProjectId)?.name || 'проект') : 'проект';
-            XLSX.writeFile(wb, `${projName}-оценка.xlsx`);
+            XLSX.writeFile(wb, `${projName}.xlsx`);
         }
 
         // ── GanttPRO XLSX Export ─────────────────────────────────────────────
