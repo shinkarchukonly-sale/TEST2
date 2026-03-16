@@ -3468,230 +3468,222 @@
 
         // Export functions
         function exportToExcel() {
-            // Calculate all values
+            const dw = state.disabledWorks || { percentages: [], fixed: [], integrations: [] };
+            const dwPct = (base, key) => dw.percentages.includes(key) ? 0 : Math.round(base * (state.percentages[key] || 0) / 100);
+            const dwFix = (key) => dw.fixed.includes(key) ? 0 : Math.round(state.fixedValues[key] || 0);
+
+            // Totals by blocks
             const blocksTotal = { analytics: 0, design: 0, frontend: 0, backend: 0, test: 0 };
-            state.pages.forEach(page => {
-                page.blocks.forEach(block => {
-                    blocksTotal.analytics += block.analytics;
-                    blocksTotal.design += block.design;
-                    blocksTotal.frontend += block.frontend;
-                    blocksTotal.backend += block.backend;
-                    blocksTotal.test += block.test;
-                });
-            });
+            state.pages.forEach(p => p.blocks.forEach(b => {
+                blocksTotal.analytics += b.analytics; blocksTotal.design += b.design;
+                blocksTotal.frontend  += b.frontend;  blocksTotal.backend += b.backend;
+                blocksTotal.test      += b.test;
+            }));
 
-            // First two pages (main + inner)
             const firstTwo = state.pages.slice(0, 2);
-            const firstTwoTotal = { analytics: 0, design: 0, frontend: 0, backend: 0, test: 0 };
-            firstTwo.forEach(p => p.blocks.forEach(b => {
-                firstTwoTotal.analytics += b.analytics;
-                firstTwoTotal.design += b.design;
-                firstTwoTotal.frontend += b.frontend;
-                firstTwoTotal.backend += b.backend;
-                firstTwoTotal.test += b.test;
-            }));
-
-            // Rest pages (without first two)
             const restPages = state.pages.slice(2);
-            const restTotal = { analytics: 0, design: 0, frontend: 0, backend: 0, test: 0 };
-            restPages.forEach(p => p.blocks.forEach(b => {
-                restTotal.analytics += b.analytics;
-                restTotal.design += b.design;
-                restTotal.frontend += b.frontend;
-                restTotal.backend += b.backend;
-                restTotal.test += b.test;
-            }));
+            const ft = { analytics: 0, design: 0, frontend: 0, backend: 0, test: 0 };
+            const rt = { analytics: 0, design: 0, frontend: 0, backend: 0, test: 0 };
+            firstTwo.forEach(p => p.blocks.forEach(b => { ft.analytics+=b.analytics; ft.design+=b.design; ft.frontend+=b.frontend; ft.backend+=b.backend; ft.test+=b.test; }));
+            restPages.forEach(p => p.blocks.forEach(b => { rt.analytics+=b.analytics; rt.design+=b.design; rt.frontend+=b.frontend; rt.backend+=b.backend; rt.test+=b.test; }));
 
-            // Fixed works calculations
-            const analyticsCuration = blocksTotal.analytics * (state.percentages.analyticsCuration / 100);
-            const analyticsOperations = blocksTotal.analytics * (state.percentages.analyticsOperations / 100);
-            const analyticsPreparation = blocksTotal.analytics * (state.percentages.analyticsPreparation / 100);
-            
-            const designOperations = blocksTotal.design * (state.percentages.designOperations / 100);
-            const designUIKit = blocksTotal.design * (state.percentages.designUIKit / 100);
-            const designUsedBlocks = blocksTotal.design * (state.percentages.designUsedBlocks / 100);
-            
-            const frontendOperations = blocksTotal.frontend * (state.percentages.frontendOperations / 100);
-            const frontendReview = blocksTotal.frontend * (state.percentages.frontendReview / 100);
-            const frontendBugs = blocksTotal.frontend * (state.percentages.frontendBugs / 100);
-            const frontendIntegration = blocksTotal.frontend * (state.percentages.frontendIntegration / 100);
-            
-            const backendOperations = blocksTotal.backend * (state.percentages.backendOperations / 100);
-            const backendReview = blocksTotal.backend * (state.percentages.backendReview / 100);
-            const backendBugs = blocksTotal.backend * (state.percentages.backendBugs / 100);
-            
-            const testingOperations = blocksTotal.test * (state.percentages.testingOperations / 100);
-            const testingProd = blocksTotal.test * (state.percentages.testingProd / 100);
+            // Custom works
+            const customA  = (state.customWorks?.analytics    || []).reduce((s,w)=>s+w.hours,0);
+            const customD  = (state.customWorks?.design       || []).reduce((s,w)=>s+w.hours,0);
+            const customFE = (state.customWorks?.frontend     || []).reduce((s,w)=>s+w.hours,0);
+            const customBE = (state.customWorks?.backend      || []).reduce((s,w)=>s+w.hours,0);
+            const customT  = (state.customWorks?.testing      || []).reduce((s,w)=>s+w.hours,0);
+            const customC  = (state.customWorks?.content      || []).reduce((s,w)=>s+w.hours,0);
 
-            // Custom works totals
-            const customAnalytics = (state.customWorks.analytics || []).reduce((sum, w) => sum + w.hours, 0);
-            const customDesign = (state.customWorks.design || []).reduce((sum, w) => sum + w.hours, 0);
-            const customFrontend = (state.customWorks.frontend || []).reduce((sum, w) => sum + w.hours, 0);
-            const customBackend = (state.customWorks.backend || []).reduce((sum, w) => sum + w.hours, 0);
-            const customTesting = (state.customWorks.testing || []).reduce((sum, w) => sum + w.hours, 0);
-            const customContent = (state.customWorks.content || []).reduce((sum, w) => sum + w.hours, 0);
+            // Analytics
+            const aFixedSum  = dwFix('analyticsBenchmark') + dwFix('analyticsBrief') + dwFix('analyticsRequirements') + dwFix('analyticsStructure');
+            const aBase      = blocksTotal.analytics + aFixedSum + customA;
+            const aCuration  = dwPct(aBase, 'analyticsCuration');
+            const aOps       = dwPct(aBase, 'analyticsOperations');
+            const aPrep      = dwPct(blocksTotal.analytics + customA, 'analyticsPreparation');
+            const aReview    = aCuration + aOps + aPrep; // суммируем в "Ревью и правки"
+            const aTotal     = aFixedSum + aReview + customA;
 
-            // Build export data
-            const data = [
-                ['Экспорт калькулятора'],
-                ['Структура задач', '', '', 'Наименование задач', 'Трудозатраты в часах'],
-                [],
-                ['1', 'Планирование', '', '', ''],
-                ['1.1', '', 'Предпроектная аналитика', '', Math.round(
-                    analyticsCuration + analyticsOperations + 
-                    state.fixedValues.analyticsBenchmark + state.fixedValues.analyticsBrief + 
-                    state.fixedValues.analyticsRequirements + state.fixedValues.analyticsStructure + 
-                    analyticsPreparation + customAnalytics
-                )],
-                ['1.1.1', '', '', 'Курирование', Math.round(analyticsCuration)],
-                ['1.1.2', '', '', 'Операционка', Math.round(analyticsOperations)],
-                ['1.1.3', '', '', 'Анализ конкурентного окружения. Бенчмаркинг', Math.round(state.fixedValues.analyticsBenchmark)],
-                ['1.1.4', '', '', 'Подготовка брифа и интервьюирование', Math.round(state.fixedValues.analyticsBrief)],
-                ['1.1.5', '', '', 'Составление бизнес требований', Math.round(state.fixedValues.analyticsRequirements)],
-                ['1.1.6', '', '', 'Составление структуры', Math.round(state.fixedValues.analyticsStructure)],
-                ['1.1.7', '', '', 'Подготовка макетов к следующим этапам', Math.round(analyticsPreparation)],
-            ];
+            // Design
+            const dUIKit     = dwPct(blocksTotal.design, 'designUIKit');
+            const dUsed      = dwPct(blocksTotal.design, 'designUsedBlocks');
+            const dFixedSum  = dwFix('designAnimMain') + dwFix('designAnimInner') + dwFix('designAdaptMain') + dwFix('designAdaptAll') + dwFix('designUIKitMain');
+            const dBase      = blocksTotal.design + dFixedSum + dUIKit + dUsed + customD;
+            const dOps       = dwPct(dBase, 'designOperations');
+            const dSup       = dwPct(dBase + dOps, 'designSupervision');
+            const dReview    = dOps + dUsed; // Операционка + Готовые блоки → Ревью и правки
+            const dTotal     = ft.design + rt.design + dFixedSum + dUIKit + dReview + dSup + customD;
 
-            // Add custom analytics works
-            let analyticsIdx = 8;
-            (state.customWorks.analytics || []).forEach((w, i) => {
-                data.push(['1.1.' + analyticsIdx, '', '', w.name, Math.round(w.hours)]);
-                analyticsIdx++;
-            });
+            // Frontend
+            const feFixedSum  = dwFix('frontendSetup') + dwFix('frontendAnimMain') + dwFix('frontendAnimInner');
+            const feMlFront   = dwFix('backendMultilangFront') + dwFix('backendSearchFront');
+            const feIntg      = dwPct(blocksTotal.frontend + feFixedSum + feMlFront + customFE, 'frontendIntegration');
+            const feBase2     = blocksTotal.frontend + feFixedSum + feMlFront + feIntg + customFE;
+            const feProtos    = dwFix('frontendPrototypes');
+            const feOps       = dwPct(feBase2, 'frontendOperations');
+            const feReview    = dwPct(feBase2, 'frontendReview');
+            const feBugs      = dwPct(feBase2, 'frontendBugs');
+            const feRevTotal  = feProtos + feOps + feReview + feBugs; // Оценка прот + Операц + Ревью + Баги
+            const feTotal     = ft.frontend + rt.frontend + feFixedSum + feMlFront + feIntg + feRevTotal + customFE;
 
-            // Проектирование
-            data.push([]);
-            data.push(['1.2', '', 'Проектирование', '', Math.round(firstTwoTotal.analytics + restTotal.analytics)]);
-            data.push(['1.2.1', '', '', 'Прототип главной и одной внутренней', Math.round(firstTwoTotal.analytics)]);
-            data.push(['1.2.2', '', '', 'Прототип внутренних страниц', Math.round(restTotal.analytics)]);
+            // Backend
+            const beFixedSum  = dwFix('backendSetup') + dwFix('backendMultilang') + dwFix('backendSearch');
+            const beBase      = blocksTotal.backend + beFixedSum + customBE;
+            const beOps       = dwPct(beBase, 'backendOperations');
+            const beReview    = dwPct(beBase, 'backendReview');
+            const beBugs      = dwPct(beBase, 'backendBugs');
+            const beRevTotal  = beOps + beReview + beBugs;
+            const beTotal     = ft.backend + rt.backend + beFixedSum + beRevTotal + customBE;
 
-            // Дизайн
-            const designFixedTotal = designOperations + state.fixedValues.designAnimMain + state.fixedValues.designAnimInner + 
-                state.fixedValues.designAdaptMain + state.fixedValues.designAdaptAll + state.fixedValues.designUIKitMain + 
-                designUIKit + designUsedBlocks + customDesign;
-            
-            data.push([]);
-            data.push(['1.3', '', 'Дизайн', '', Math.round(firstTwoTotal.design + restTotal.design + designFixedTotal)]);
-            data.push(['1.3.1', '', '', 'Дизайн-макет главной и одной внутренней', Math.round(firstTwoTotal.design)]);
-            data.push(['1.3.2', '', '', 'Дизайн-макет внутренних страниц', Math.round(restTotal.design)]);
-            data.push(['1.3.3', '', '', 'Операционка', Math.round(designOperations)]);
-            data.push(['1.3.4', '', '', 'Анимации главной страницы', Math.round(state.fixedValues.designAnimMain)]);
-            data.push(['1.3.5', '', '', 'Анимации внутренних страниц', Math.round(state.fixedValues.designAnimInner)]);
-            data.push(['1.3.6', '', '', 'Адаптивы (главная и 1 внутренняя)', Math.round(state.fixedValues.designAdaptMain)]);
-            data.push(['1.3.7', '', '', 'Адаптивы всех страниц', Math.round(state.fixedValues.designAdaptAll)]);
-            data.push(['1.3.8', '', '', 'UI-kit (главная и 1 внутренняя)', Math.round(state.fixedValues.designUIKitMain)]);
-            data.push(['1.3.9', '', '', 'UI-kit (общий)', Math.round(designUIKit)]);
-            data.push(['1.3.10', '', '', 'Использование готовых блоков', Math.round(designUsedBlocks)]);
+            // Testing
+            const tBase      = blocksTotal.test + customT;
+            const tOps       = dwPct(tBase, 'testingOperations');
+            const tProd      = dwPct(tBase, 'testingProd');
+            const tFixed     = dwFix('testingArtifacts') + dwFix('testingPrototypes') + dwFix('testingDesign') + dwFix('testingPerformance') + dwFix('testingContent');
+            const tTotal     = ft.test + rt.test + tOps + tProd + tFixed + customT;
 
-            // Add custom design works
-            let designIdx = 11;
-            (state.customWorks.design || []).forEach((w, i) => {
-                data.push(['1.3.' + designIdx, '', '', w.name, Math.round(w.hours)]);
-                designIdx++;
-            });
+            // Content
+            const cTotal     = dwFix('contentFill') + dwFix('contentInstruction') + customC;
 
-            // Front-end
-            const frontendFixedTotal = state.fixedValues.frontendSetup + state.fixedValues.frontendPrototypes + 
-                frontendOperations + frontendReview + frontendBugs + 
-                state.fixedValues.frontendAnimMain + state.fixedValues.frontendAnimInner + 
-                frontendIntegration + customFrontend;
-            
-            data.push([]);
-            data.push(['1.4', '', 'Front-end', '', Math.round(firstTwoTotal.frontend + restTotal.frontend + frontendFixedTotal)]);
-            data.push(['1.4.1', '', '', 'Front-end главной и одной внутренней', Math.round(firstTwoTotal.frontend)]);
-            data.push(['1.4.2', '', '', 'Front-end внутренних страниц', Math.round(restTotal.frontend)]);
-            data.push(['1.4.3', '', '', 'Разворачивание проекта', Math.round(state.fixedValues.frontendSetup)]);
-            data.push(['1.4.4', '', '', 'Оценка прототипов', Math.round(state.fixedValues.frontendPrototypes)]);
-            data.push(['1.4.5', '', '', 'Операционка', Math.round(frontendOperations)]);
-            data.push(['1.4.6', '', '', 'Ревью и курирование', Math.round(frontendReview)]);
-            data.push(['1.4.7', '', '', 'Правка багов', Math.round(frontendBugs)]);
-            data.push(['1.4.8', '', '', 'Анимации главной страницы', Math.round(state.fixedValues.frontendAnimMain)]);
-            data.push(['1.4.9', '', '', 'Анимации внутренних страниц', Math.round(state.fixedValues.frontendAnimInner)]);
-            data.push(['1.4.10', '', '', 'Интеграции front и back', Math.round(frontendIntegration)]);
+            // Assignees per section
+            const assignees = {
+                analytics:  'Аналитик',
+                design:     'Дизайнер',
+                frontend:   'Frontend-разработчик',
+                backend:    'Backend-разработчик',
+                testing:    'Тестировщик',
+                content:    'Контент-менеджер',
+                client:     'Клиент'
+            };
 
-            // Add custom frontend works
-            let frontendIdx = 11;
-            (state.customWorks.frontend || []).forEach((w, i) => {
-                data.push(['1.4.' + frontendIdx, '', '', w.name, Math.round(w.hours)]);
-                frontendIdx++;
-            });
+            // Helper — добавить строку только если часы > 0
+            const rows = [];
+            const r = (wbs, lvl1, lvl2, name, hours, assignee='') => {
+                if (hours <= 0) return;
+                rows.push([wbs, lvl1||'', lvl2||'', name||'', Math.round(hours), assignee]);
+            };
+            // Группа — без часов (GanttPRO суммирует дочерние сам)
+            const g = (wbs, lvl1, lvl2, name) => {
+                rows.push([wbs, lvl1||'', lvl2||'', name||'', '', '']);
+            };
 
-            // Back-end
-            const backendFixedTotal = state.fixedValues.backendSetup + backendOperations + backendReview + backendBugs + 
-                state.fixedValues.backendMultilang + state.fixedValues.backendMultilangFront + 
-                state.fixedValues.backendSearch + state.fixedValues.backendSearchFront + customBackend;
-            
-            data.push([]);
-            data.push(['1.5', '', 'Back-end', '', Math.round(firstTwoTotal.backend + restTotal.backend + backendFixedTotal)]);
-            data.push(['1.5.1', '', '', 'Back-end главной и одной внутренней', Math.round(firstTwoTotal.backend)]);
-            data.push(['1.5.2', '', '', 'Back-end внутренних страниц', Math.round(restTotal.backend)]);
-            data.push(['1.5.3', '', '', 'Разворачивание проекта', Math.round(state.fixedValues.backendSetup)]);
-            data.push(['1.5.4', '', '', 'Операционка', Math.round(backendOperations)]);
-            data.push(['1.5.5', '', '', 'Ревью и курирование', Math.round(backendReview)]);
-            data.push(['1.5.6', '', '', 'Правка багов', Math.round(backendBugs)]);
-            data.push(['1.5.7', '', '', 'Мультиязычность', Math.round(state.fixedValues.backendMultilang + state.fixedValues.backendMultilangFront)]);
-            data.push(['1.5.8', '', '', 'Базовый Поиск', Math.round(state.fixedValues.backendSearch + state.fixedValues.backendSearchFront)]);
+            // Header
+            rows.push(['Экспорт калькулятора']);
+            rows.push(['Структура задач', '', '', 'Наименование задач', 'Трудозатраты в часах', 'Исполнитель']);
+            rows.push([]);
 
-            // Add custom backend works
-            let backendIdx = 9;
-            (state.customWorks.backend || []).forEach((w, i) => {
-                data.push(['1.5.' + backendIdx, '', '', w.name, Math.round(w.hours)]);
-                backendIdx++;
-            });
+            // 1. Планирование
+            g('1', 'Планирование', '', '');
 
-            // Тестирование
-            const testingFixedTotal = testingOperations + testingProd + 
-                state.fixedValues.testingArtifacts + state.fixedValues.testingPrototypes + 
-                state.fixedValues.testingDesign + state.fixedValues.testingPerformance + 
-                state.fixedValues.testingContent + customTesting;
-            
-            data.push([]);
-            data.push(['1.6', '', 'Тестирование', '', Math.round(firstTwoTotal.test + restTotal.test + testingFixedTotal)]);
-            data.push(['1.6.1', '', '', 'Тестирование главной и одной внутренней', Math.round(firstTwoTotal.test)]);
-            data.push(['1.6.2', '', '', 'Тестирование внутренних страниц', Math.round(restTotal.test)]);
-            data.push(['1.6.3', '', '', 'Операционка', Math.round(testingOperations)]);
-            data.push(['1.6.4', '', '', 'Тестирование на проде', Math.round(testingProd)]);
-            data.push(['1.6.5', '', '', 'Отсмотр артефактов с аналитики', Math.round(state.fixedValues.testingArtifacts)]);
-            data.push(['1.6.6', '', '', 'Отсмотр прототипов', Math.round(state.fixedValues.testingPrototypes)]);
-            data.push(['1.6.7', '', '', 'Отсмотр дизайн-макетов', Math.round(state.fixedValues.testingDesign)]);
-            data.push(['1.6.8', '', '', 'Тестирование производительности', Math.round(state.fixedValues.testingPerformance)]);
-            data.push(['1.6.9', '', '', 'Тестирование с контентом', Math.round(state.fixedValues.testingContent)]);
+            // 1.1 Предпроектная аналитика
+            g('1.1', '', 'Предпроектная аналитика', '');
+            r('1.1.1', '', '', 'Анализ конкурентного окружения', dwFix('analyticsBenchmark'), assignees.analytics);
+            r('1.1.2', '', '', 'Подготовка брифа и интервьюирование', dwFix('analyticsBrief'), assignees.analytics);
+            r('1.1.3', '', '', 'Составление бизнес требований', dwFix('analyticsRequirements'), assignees.analytics);
+            r('1.1.4', '', '', 'Составление структуры', dwFix('analyticsStructure'), assignees.analytics);
+            r('1.1.5', '', '', 'Ревью и правки', aReview, assignees.analytics);
+            let aIdx = 6;
+            (state.customWorks?.analytics || []).forEach(w => { r('1.1.'+(aIdx++), '', '', w.name, w.hours, assignees.analytics); });
 
-            // Add custom testing works
-            let testingIdx = 10;
-            (state.customWorks.testing || []).forEach((w, i) => {
-                data.push(['1.6.' + testingIdx, '', '', w.name, Math.round(w.hours)]);
-                testingIdx++;
-            });
+            rows.push([]);
+            r('1.1.С', '', '', 'Согласование аналитики', 24, assignees.client);
 
-            // Контент
-            data.push([]);
-            data.push(['1.7', '', 'Контент', '', Math.round(state.fixedValues.contentFill + state.fixedValues.contentInstruction + customContent)]);
-            data.push(['1.7.1', '', '', 'Наполнение контентом', Math.round(state.fixedValues.contentFill)]);
-            data.push(['1.7.2', '', '', 'Инструкция для контент-менеджера', Math.round(state.fixedValues.contentInstruction)]);
+            // 1.2 Проектирование
+            rows.push([]);
+            g('1.2', '', 'Проектирование', '');
+            r('1.2.1', '', '', 'Прототип главной и одной внутренней', ft.analytics, assignees.analytics);
+            r('1.2.2', '', '', 'Прототип внутренних страниц', rt.analytics, assignees.analytics);
+            rows.push([]);
+            r('1.2.С', '', '', 'Согласование прототипов', 24, assignees.client);
 
-            // Add custom content works
-            let contentIdx = 3;
-            (state.customWorks.content || []).forEach((w, i) => {
-                data.push(['1.7.' + contentIdx, '', '', w.name, Math.round(w.hours)]);
-                contentIdx++;
-            });
+            // 1.3 Дизайн
+            rows.push([]);
+            g('1.3', '', 'Дизайн', '');
+            r('1.3.1', '', '', 'Дизайн главной и одной внутренней', ft.design, assignees.design);
+            r('1.3.2', '', '', 'Дизайн внутренних страниц', rt.design, assignees.design);
+            r('1.3.3', '', '', 'Анимации главной', dwFix('designAnimMain'), assignees.design);
+            r('1.3.4', '', '', 'Анимации внутренних', dwFix('designAnimInner'), assignees.design);
+            r('1.3.5', '', '', 'Адаптивы (главная и 1 внутренняя)', dwFix('designAdaptMain'), assignees.design);
+            r('1.3.6', '', '', 'Адаптивы всех страниц', dwFix('designAdaptAll'), assignees.design);
+            r('1.3.7', '', '', 'UI-kit (главная и 1 внутренняя)', dwFix('designUIKitMain'), assignees.design);
+            r('1.3.8', '', '', 'UI-kit (общий)', dUIKit, assignees.design);
+            r('1.3.9', '', '', 'Авторский надзор', dSup, assignees.design);
+            r('1.3.10', '', '', 'Ревью и правки', dReview, assignees.design);
+            let dIdx = 11;
+            (state.customWorks?.design || []).forEach(w => { r('1.3.'+(dIdx++), '', '', w.name, w.hours, assignees.design); });
+            rows.push([]);
+            r('1.3.С', '', '', 'Согласование дизайна', 24, assignees.client);
 
-            // Create workbook and export
+            // 1.4 Front-end
+            rows.push([]);
+            g('1.4', '', 'Front-end', '');
+            r('1.4.1', '', '', 'Front-end главной и одной внутренней', ft.frontend, assignees.frontend);
+            r('1.4.2', '', '', 'Front-end внутренних страниц', rt.frontend, assignees.frontend);
+            r('1.4.3', '', '', 'Разворачивание проекта', dwFix('frontendSetup'), assignees.frontend);
+            r('1.4.4', '', '', 'Анимации главной', dwFix('frontendAnimMain'), assignees.frontend);
+            r('1.4.5', '', '', 'Анимации внутренних', dwFix('frontendAnimInner'), assignees.frontend);
+            r('1.4.6', '', '', 'Мультиязычность', dwFix('backendMultilangFront'), assignees.frontend);
+            r('1.4.7', '', '', 'Базовый поиск', dwFix('backendSearchFront'), assignees.frontend);
+            r('1.4.8', '', '', 'Интеграции front и back', feIntg, assignees.frontend);
+            r('1.4.9', '', '', 'Ревью и правки', feRevTotal, assignees.frontend);
+            let feIdx = 10;
+            (state.customWorks?.frontend || []).forEach(w => { r('1.4.'+(feIdx++), '', '', w.name, w.hours, assignees.frontend); });
+
+            // 1.5 Back-end
+            rows.push([]);
+            g('1.5', '', 'Back-end', '');
+            r('1.5.1', '', '', 'Back-end главной и одной внутренней', ft.backend, assignees.backend);
+            r('1.5.2', '', '', 'Back-end внутренних страниц', rt.backend, assignees.backend);
+            r('1.5.3', '', '', 'Разворачивание проекта', dwFix('backendSetup'), assignees.backend);
+            r('1.5.4', '', '', 'Мультиязычность', dwFix('backendMultilang'), assignees.backend);
+            r('1.5.5', '', '', 'Базовый поиск', dwFix('backendSearch'), assignees.backend);
+            r('1.5.6', '', '', 'Ревью и правки', beRevTotal, assignees.backend);
+            let beIdx = 7;
+            (state.customWorks?.backend || []).forEach(w => { r('1.5.'+(beIdx++), '', '', w.name, w.hours, assignees.backend); });
+
+            rows.push([]);
+            r('1.5.С', '', '', 'Согласование разработки', 24, assignees.client);
+
+            // 1.6 Тестирование
+            rows.push([]);
+            g('1.6', '', 'Тестирование', '');
+            r('1.6.1', '', '', 'Тестирование главной и одной внутренней', ft.test, assignees.testing);
+            r('1.6.2', '', '', 'Тестирование внутренних страниц', rt.test, assignees.testing);
+            r('1.6.3', '', '', 'Операционка', tOps, assignees.testing);
+            r('1.6.4', '', '', 'Тестирование на проде', tProd, assignees.testing);
+            r('1.6.5', '', '', 'Отсмотр артефактов', dwFix('testingArtifacts'), assignees.testing);
+            r('1.6.6', '', '', 'Отсмотр прототипов', dwFix('testingPrototypes'), assignees.testing);
+            r('1.6.7', '', '', 'Отсмотр дизайн-макетов', dwFix('testingDesign'), assignees.testing);
+            r('1.6.8', '', '', 'Тестирование производительности', dwFix('testingPerformance'), assignees.testing);
+            r('1.6.9', '', '', 'Тестирование с контентом', dwFix('testingContent'), assignees.testing);
+            let tIdx = 10;
+            (state.customWorks?.testing || []).forEach(w => { r('1.6.'+(tIdx++), '', '', w.name, w.hours, assignees.testing); });
+
+            // 1.7 Контент
+            rows.push([]);
+            g('1.7', '', 'Контент', '');
+            r('1.7.1', '', '', 'Наполнение контентом', dwFix('contentFill'), assignees.content);
+            r('1.7.2', '', '', 'Инструкция для контент-менеджера', dwFix('contentInstruction'), assignees.content);
+            let cIdx = 3;
+            (state.customWorks?.content || []).forEach(w => { r('1.7.'+(cIdx++), '', '', w.name, w.hours, assignees.content); });
+
+            rows.push([]);
+            r('1.7.С', '', '', 'Финальное согласование', 24, assignees.client);
+
+            // Create workbook
             const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            
-            // Set column widths
+            const ws = XLSX.utils.aoa_to_sheet(rows);
             ws['!cols'] = [
-                { wch: 10 },  // A
-                { wch: 15 },  // B
-                { wch: 25 },  // C
-                { wch: 45 },  // D
-                { wch: 20 }   // E
+                { wch: 8 },   // A - WBS
+                { wch: 16 },  // B - lvl1
+                { wch: 20 },  // C - lvl2
+                { wch: 45 },  // D - name
+                { wch: 18 },  // E - hours
+                { wch: 25 }   // F - assignee
             ];
-
             XLSX.utils.book_append_sheet(wb, ws, 'Оценка');
-            XLSX.writeFile(wb, 'calculator-export.xlsx');
+            const projName = currentProjectId ? (projects.find(p=>p.id===currentProjectId)?.name || 'проект') : 'проект';
+            XLSX.writeFile(wb, `${projName}-оценка.xlsx`);
         }
 
         // ── GanttPRO XLSX Export ─────────────────────────────────────────────
