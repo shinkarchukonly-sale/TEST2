@@ -2739,14 +2739,14 @@
         }
 
         // Custom works management
-        function addCustomWork(category) {
+        function addCustomWork(category, name, hours) {
             if (!state.customWorks[category]) {
                 state.customWorks[category] = [];
             }
             state.customWorks[category].push({
                 id: Date.now(),
-                name: 'Новая работа',
-                hours: 0
+                name: name || 'Новая работа',
+                hours: hours || 0
             });
             renderFixedWorks();
             calculateTotals();
@@ -2826,9 +2826,13 @@
         }
 
         async function sbFetch(method, path, body) {
+            const headers = sbHeaders();
+            if (method === 'POST' && path.includes('on_conflict')) {
+                headers['Prefer'] = 'resolution=merge-duplicates';
+            }
             const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
                 method,
-                headers: sbHeaders(),
+                headers,
                 body: body ? JSON.stringify(body) : undefined
             });
             if (!res.ok) {
@@ -4130,7 +4134,7 @@
                     percentages: [
                         { key: 'designOperations', name: 'Операционка', hint: '% от суммы блоков' },
                         { key: 'designUIKit', name: 'UI-kit (общий)', hint: '% от суммы блоков' },
-                        { key: 'designUsedBlocks', name: 'Использование готовых блоков', hint: '% скидка' },
+                        { key: 'designUsedBlocks', name: 'Использование готовых блоков', hint: '% плюс' },
                         { key: 'designSupervision', name: 'Авторский надзор', hint: '% от итого' }
                     ],
                     fixed: [
@@ -4271,6 +4275,18 @@
                 html += `
                             </tbody>
                         </table>
+                        <div style="padding:8px 0 4px;">
+                            <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#F8FAFC;border-radius:8px;border:1px dashed #CBD5E1;">
+                                <input type="text" placeholder="Название новой работы..." id="new-work-name-${section.title}"
+                                    style="flex:1;border:1px solid #E2E8F0;border-radius:6px;padding:6px 10px;font-size:13px;outline:none;"
+                                    onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#E2E8F0'">
+                                <input type="number" placeholder="ч" min="0" id="new-work-hours-${section.title}"
+                                    style="width:64px;border:1px solid #E2E8F0;border-radius:6px;padding:6px 8px;font-size:13px;outline:none;text-align:center;"
+                                    onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='#E2E8F0'">
+                                <span style="font-size:12px;color:#64748B;">ч</span>
+                                <button onclick="addWorkToSection('${section.title}')" style="background:#3B82F6;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0;">+ Добавить</button>
+                            </div>
+                        </div>
                     </div>
                 `;
             });
@@ -4402,7 +4418,31 @@
             state.integrationsData[integration][field] = parseFloat(value) || 0;
         }
 
-        function disableWork(type, key) {
+        function addWorkToSection(sectionTitle) {
+            const categoryMap = {
+                'Работы по аналитике':    'analytics',
+                'Работы по дизайну':      'design',
+                'Работы по Front-end':    'frontend',
+                'Работы по Back-end':     'backend',
+                'Работы по тестированию': 'testing',
+                'Работы по контенту':     'content'
+            };
+            const category = categoryMap[sectionTitle];
+            if (!category) return;
+
+            const nameEl  = document.getElementById('new-work-name-'  + sectionTitle);
+            const hoursEl = document.getElementById('new-work-hours-' + sectionTitle);
+            const name  = nameEl  ? nameEl.value.trim()  : '';
+            const hours = hoursEl ? Math.round(parseFloat(hoursEl.value) || 0) : 0;
+
+            if (!name) {
+                if (nameEl) { nameEl.focus(); nameEl.style.borderColor = '#EF4444'; }
+                return;
+            }
+
+            addCustomWork(category, name, hours);
+            renderWorksAdminPanel();
+        }
             if (!state.disabledWorks[type].includes(key)) {
                 state.disabledWorks[type].push(key);
                 renderWorksAdminPanel();
@@ -4412,10 +4452,9 @@
         function disableWorkMain(type, key) {
             if (!state.disabledWorks[type].includes(key)) {
                 state.disabledWorks[type].push(key);
-                localStorage.setItem('calculatorDisabledWorks', JSON.stringify(state.disabledWorks));
                 renderFixedWorks();
                 calculateTotals();
-                saveState();
+                saveState(); // сохраняет только в snapshot проекта, не в глобальные настройки
             }
         }
 
@@ -4434,8 +4473,8 @@
                 const worksSettings = {
                     percentages: state.percentages,
                     fixedValues: state.fixedValues,
-                    integrationsData: state.integrationsData,
-                    disabledWorks: state.disabledWorks
+                    integrationsData: state.integrationsData
+                    // disabledWorks НЕ сохраняем глобально — это настройка каждого проекта отдельно
                 };
                 await sbFetch('POST', 'settings?on_conflict=key', {
                     key: 'works_settings',
@@ -4445,7 +4484,7 @@
                 localStorage.setItem('calculatorPercentages', JSON.stringify(state.percentages));
                 localStorage.setItem('calculatorFixedValues', JSON.stringify(state.fixedValues));
                 localStorage.setItem('calculatorIntegrationsData', JSON.stringify(state.integrationsData));
-                localStorage.setItem('calculatorDisabledWorks', JSON.stringify(state.disabledWorks));
+                localStorage.removeItem('calculatorDisabledWorks');
                 renderFixedWorks();
                 calculateTotals();
                 saveState();
@@ -4496,7 +4535,7 @@
                     if (s.percentages)      state.percentages      = { ...state.percentages,      ...s.percentages };
                     if (s.fixedValues)      state.fixedValues      = { ...state.fixedValues,      ...s.fixedValues };
                     if (s.integrationsData) state.integrationsData = { ...state.integrationsData, ...s.integrationsData };
-                    if (s.disabledWorks)    state.disabledWorks    = { ...state.disabledWorks,    ...s.disabledWorks };
+                    // disabledWorks НЕ грузим из глобальных настроек — это per-project
                     return;
                 }
             } catch(e) {
@@ -4506,11 +4545,10 @@
                 const savedPercentages      = localStorage.getItem('calculatorPercentages');
                 const savedFixedValues      = localStorage.getItem('calculatorFixedValues');
                 const savedIntegrationsData = localStorage.getItem('calculatorIntegrationsData');
-                const savedDisabledWorks    = localStorage.getItem('calculatorDisabledWorks');
                 if (savedPercentages)      state.percentages      = { ...state.percentages,      ...JSON.parse(savedPercentages) };
                 if (savedFixedValues)      state.fixedValues      = { ...state.fixedValues,      ...JSON.parse(savedFixedValues) };
                 if (savedIntegrationsData) state.integrationsData = { ...state.integrationsData, ...JSON.parse(savedIntegrationsData) };
-                if (savedDisabledWorks)    state.disabledWorks    = { ...state.disabledWorks,    ...JSON.parse(savedDisabledWorks) };
+                // disabledWorks из localStorage тоже не грузим
             } catch(e) {
                 console.error('Error loading works data from localStorage:', e);
             }
