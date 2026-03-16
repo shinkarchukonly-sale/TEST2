@@ -869,7 +869,12 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 14px;
+            table-layout: fixed;
         }
+        .admin-table th:nth-child(1), .admin-table td:nth-child(1) { width: 40px; }
+        .admin-table th:nth-child(2), .admin-table td:nth-child(2) { width: auto; }
+        .admin-table th:nth-child(3), .admin-table td:nth-child(3) { width: 120px; }
+        .admin-table th:nth-child(4), .admin-table td:nth-child(4) { width: 130px; }
 
         .admin-table th {
             text-align: left;
@@ -2203,12 +2208,12 @@
             analyticsEl.innerHTML = `
                 ${workItem('percentages', 'analyticsCuration', 
                     `Курирование <input type="number" value="${state.percentages.analyticsCuration || 20}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.analyticsCuration=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Аналитика × ${state.percentages.analyticsCuration || 20}%`,
+                    `% от всех работ по аналитике: ${state.percentages.analyticsCuration || 20}%`,
                     `<span id="analyticsCuration">0</span>`
                 )}
                 ${workItem('percentages', 'analyticsOperations',
                     `Операционка <input type="number" value="${state.percentages.analyticsOperations || 10}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.analyticsOperations=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Аналитика × ${state.percentages.analyticsOperations || 10}%`,
+                    `% от всех работ по аналитике: ${state.percentages.analyticsOperations || 10}%`,
                     `<span id="analyticsOperations">0</span>`
                 )}
                 ${workItem('fixed', 'analyticsBenchmark',
@@ -2233,7 +2238,7 @@
                 )}
                 ${workItem('percentages', 'analyticsPreparation',
                     `Подготовка макетов к следующим этапам <input type="number" value="${state.percentages.analyticsPreparation}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.analyticsPreparation=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Аналитика × ${state.percentages.analyticsPreparation}%`,
+                    `% от блоков: ${state.percentages.analyticsPreparation}%`,
                     `<span id="analyticsPreparation">0</span>`
                 )}
                 ${renderCustomWorks('analytics')}
@@ -2244,7 +2249,7 @@
             document.getElementById('designWorksContent').innerHTML = `
                 ${workItem('percentages', 'designOperations',
                     `Операционка <input type="number" value="${state.percentages.designOperations}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.designOperations=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ (блоки+анимации+адаптивы+кит+готовые) × ${state.percentages.designOperations}%`,
+                    `% от всех работ по дизайну: ${state.percentages.designOperations}%`,
                     `<span id="designOperations">0</span>`
                 )}
                 ${workItem('fixed', 'designAnimMain',
@@ -2274,17 +2279,17 @@
                 )}
                 ${workItem('percentages', 'designUIKit',
                     `UI-kit (общий) <input type="number" value="${state.percentages.designUIKit}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.designUIKit=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Дизайн × ${state.percentages.designUIKit}%`,
+                    `% от блоков: ${state.percentages.designUIKit}%`,
                     `<span id="designUIKit">0</span>`
                 )}
                 ${workItem('percentages', 'designUsedBlocks',
                     `Использование готовых блоков <input type="number" value="${state.percentages.designUsedBlocks}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.designUsedBlocks=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Дизайн × ${state.percentages.designUsedBlocks}% (плюс)`,
+                    `% от блоков (плюс): ${state.percentages.designUsedBlocks}%`,
                     `<span id="designUsedBlocks">0</span>`
                 )}
                 ${workItem('percentages', 'designSupervision',
                     `Авторский надзор <input type="number" value="${state.percentages.designSupervision}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.designSupervision=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ (блоки+анимации+адаптивы+кит+готовые+операционка) × ${state.percentages.designSupervision}%`,
+                    `% от всех работ по дизайну: ${state.percentages.designSupervision}%`,
                     `<span id="designSupervision">0</span>`
                 )}
                 ${renderCustomWorks('design')}
@@ -2305,17 +2310,17 @@
                 )}
                 ${workItem('percentages', 'frontendOperations',
                     `Операционка <input type="number" value="${state.percentages.frontendOperations}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.frontendOperations=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ (блоки+фиксированные+интеграции) × ${state.percentages.frontendOperations}%`,
+                    `% от всех работ по front-end: ${state.percentages.frontendOperations}%`,
                     `<span id="frontendOperations">0</span>`
                 )}
                 ${workItem('percentages', 'frontendReview',
                     `Ревью и курирование <input type="number" value="${state.percentages.frontendReview}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.frontendReview=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ (блоки+фиксированные+интеграции) × ${state.percentages.frontendReview}%`,
+                    `% от всех работ по front-end: ${state.percentages.frontendReview}%`,
                     `<span id="frontendReview">0</span>`
                 )}
                 ${workItem('percentages', 'frontendBugs',
                     `Правка багов <input type="number" value="${state.percentages.frontendBugs}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.frontendBugs=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ (блоки+фиксированные+интеграции) × ${state.percentages.frontendBugs}%`,
+                    `% от всех работ по front-end: ${state.percentages.frontendBugs}%`,
                     `<span id="frontendBugs">0</span>`
                 )}
                 ${workItem('fixed', 'frontendAnimMain',
@@ -2330,7 +2335,7 @@
                 )}
                 ${workItem('percentages', 'frontendIntegration',
                     `Интеграции front и back <input type="number" value="${state.percentages.frontendIntegration}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.frontendIntegration=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ (блоки+фиксированные) × ${state.percentages.frontendIntegration}%`,
+                    `% от блоков + фикс. работ: ${state.percentages.frontendIntegration}%`,
                     `<span id="frontendIntegration">0</span>`
                 )}
                 ${renderCustomWorks('frontend')}
@@ -2346,17 +2351,17 @@
                 )}
                 ${workItem('percentages', 'backendOperations',
                     `Операционка <input type="number" value="${state.percentages.backendOperations}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.backendOperations=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ (блоки+фиксированные) × ${state.percentages.backendOperations}%`,
+                    `% от всех работ по back-end: ${state.percentages.backendOperations}%`,
                     `<span id="backendOperations">0</span>`
                 )}
                 ${workItem('percentages', 'backendReview',
                     `Ревью и курирование <input type="number" value="${state.percentages.backendReview}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.backendReview=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ (блоки+фиксированные) × ${state.percentages.backendReview}%`,
+                    `% от всех работ по back-end: ${state.percentages.backendReview}%`,
                     `<span id="backendReview">0</span>`
                 )}
                 ${workItem('percentages', 'backendBugs',
                     `Правка багов <input type="number" value="${state.percentages.backendBugs}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.backendBugs=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ (блоки+фиксированные) × ${state.percentages.backendBugs}%`,
+                    `% от всех работ по back-end: ${state.percentages.backendBugs}%`,
                     `<span id="backendBugs">0</span>`
                 )}
                 ${workItem('fixed', 'backendMultilang',
@@ -2402,12 +2407,12 @@
             document.getElementById('testingWorksContent').innerHTML = `
                 ${workItem('percentages', 'testingOperations',
                     `Операционка <input type="number" value="${state.percentages.testingOperations}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.testingOperations=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Test × ${state.percentages.testingOperations}%`,
+                    `% от блоков: ${state.percentages.testingOperations}%`,
                     `<span id="testingOperations">0</span>`
                 )}
                 ${workItem('percentages', 'testingProd',
                     `Тестирование на проде <input type="number" value="${state.percentages.testingProd}" min="0" max="100" style="width:60px;margin-left:8px;" onchange="state.percentages.testingProd=parseFloat(this.value);calculateTotals();saveState()">%`,
-                    `= Σ Test × ${state.percentages.testingProd}%`,
+                    `% от блоков: ${state.percentages.testingProd}%`,
                     `<span id="testingProd">0</span>`
                 )}
                 ${workItem('fixed', 'testingArtifacts',
@@ -2526,51 +2531,60 @@
             const dwFix = (key) => (dw.fixed || []).includes(key) ? 0 : (state.fixedValues[key] || 0);
             const dwInt = (key) => (dw.integrations || []).includes(key) ? false : state.integrations[key];
 
-            // Analytics works
-            const analyticsCuration    = dwPct(blocksTotal.analytics, 'analyticsCuration');
-            const analyticsOperations  = dwPct(blocksTotal.analytics, 'analyticsOperations');
-            const analyticsPreparation = dwPct(blocksTotal.analytics, 'analyticsPreparation');
-            fixedWorks.analytics = analyticsCuration + analyticsOperations + dwFix('analyticsBenchmark') + dwFix('analyticsBrief') + dwFix('analyticsRequirements') + dwFix('analyticsStructure') + analyticsPreparation;
+            // Кастомные работы по направлениям (добавляются в базу ДО расчёта процентов)
+            const customA  = (state.customWorks?.analytics    || []).reduce((s, w) => s + w.hours, 0);
+            const customD  = (state.customWorks?.design       || []).reduce((s, w) => s + w.hours, 0);
+            const customFE = (state.customWorks?.frontend     || []).reduce((s, w) => s + w.hours, 0);
+            const customBE = (state.customWorks?.backend      || []).reduce((s, w) => s + w.hours, 0);
+            const customT  = (state.customWorks?.testing      || []).reduce((s, w) => s + w.hours, 0);
+            const customC  = (state.customWorks?.content      || []).reduce((s, w) => s + w.hours, 0);
+            const customI  = (state.customWorks?.integrations || []).reduce((s, w) => s + w.hours, 0);
+
+            // Analytics works — курирование и операционка от (блоки + фиксированные + кастомные)
+            const analyticsFixedSum = dwFix('analyticsBenchmark') + dwFix('analyticsBrief') + dwFix('analyticsRequirements') + dwFix('analyticsStructure');
+            const analyticsBase     = blocksTotal.analytics + analyticsFixedSum + customA;
+            const analyticsCuration    = dwPct(analyticsBase, 'analyticsCuration');
+            const analyticsOperations  = dwPct(analyticsBase, 'analyticsOperations');
+            const analyticsPreparation = dwPct(blocksTotal.analytics + customA, 'analyticsPreparation');
+            fixedWorks.analytics = analyticsCuration + analyticsOperations + analyticsFixedSum + analyticsPreparation + customA;
             setText('analyticsCuration', analyticsCuration.toFixed(0));
             setText('analyticsOperations', analyticsOperations.toFixed(0));
             setText('analyticsPreparation', analyticsPreparation.toFixed(0));
 
             // Design works
-            // Сначала считаем фиксированные и некурирующие проценты
             const designUIKit      = dwPct(blocksTotal.design, 'designUIKit');
             const designUsedBlocks = dwPct(blocksTotal.design, 'designUsedBlocks');
             const designFixedSum   = dwFix('designAnimMain') + dwFix('designAnimInner') + dwFix('designAdaptMain') + dwFix('designAdaptAll') + dwFix('designUIKitMain');
-            // База для операционки и надзора = блоки + фиксированные + UIKit + готовые блоки
-            const designBase       = blocksTotal.design + designFixedSum + designUIKit + designUsedBlocks;
+            const designBase       = blocksTotal.design + designFixedSum + designUIKit + designUsedBlocks + customD;
             const designOperations = dwPct(designBase, 'designOperations');
             const designSupervision = dwPct(designBase + designOperations, 'designSupervision');
-            fixedWorks.design = designOperations + designFixedSum + designUIKit + designUsedBlocks + designSupervision;
+            fixedWorks.design = designOperations + designFixedSum + designUIKit + designUsedBlocks + designSupervision + customD;
             setText('designOperations', designOperations.toFixed(0));
             setText('designUIKit', designUIKit.toFixed(0));
             setText('designUsedBlocks', designUsedBlocks.toFixed(0));
             setText('designSupervision', designSupervision.toFixed(0));
 
-            // Frontend works — проценты считаются от (блоки + фиксированные)
+            // Frontend works
             const frontendFixedSum    = dwFix('frontendSetup') + dwFix('frontendPrototypes') + dwFix('frontendAnimMain') + dwFix('frontendAnimInner') + dwFix('backendMultilangFront') + dwFix('backendSearchFront');
-            const frontendBase        = blocksTotal.frontend + frontendFixedSum;
+            const frontendBase        = blocksTotal.frontend + frontendFixedSum + customFE;
             const frontendIntegration = dwPct(frontendBase, 'frontendIntegration');
             const frontendBase2       = frontendBase + frontendIntegration;
             const frontendOperations  = dwPct(frontendBase2, 'frontendOperations');
             const frontendReview      = dwPct(frontendBase2, 'frontendReview');
             const frontendBugs        = dwPct(frontendBase2, 'frontendBugs');
-            fixedWorks.frontend = frontendFixedSum + frontendIntegration + frontendOperations + frontendReview + frontendBugs;
+            fixedWorks.frontend = frontendFixedSum + frontendIntegration + frontendOperations + frontendReview + frontendBugs + customFE;
             setText('frontendOperations', frontendOperations.toFixed(0));
             setText('frontendReview', frontendReview.toFixed(0));
             setText('frontendBugs', frontendBugs.toFixed(0));
             setText('frontendIntegration', frontendIntegration.toFixed(0));
 
-            // Backend works — проценты считаются от (блоки + фиксированные)
+            // Backend works
             const backendFixedSum  = dwFix('backendSetup') + dwFix('backendMultilang') + dwFix('backendSearch');
-            const backendBase      = blocksTotal.backend + backendFixedSum;
+            const backendBase      = blocksTotal.backend + backendFixedSum + customBE + customI;
             const backendOperations = dwPct(backendBase, 'backendOperations');
             const backendReview     = dwPct(backendBase, 'backendReview');
             const backendBugs       = dwPct(backendBase, 'backendBugs');
-            fixedWorks.backend  = backendFixedSum + backendOperations + backendReview + backendBugs;
+            fixedWorks.backend  = backendFixedSum + backendOperations + backendReview + backendBugs + customBE + customI;
             setText('backendOperations', backendOperations.toFixed(0));
             setText('backendReview', backendReview.toFixed(0));
             setText('backendBugs', backendBugs.toFixed(0));
@@ -2583,31 +2597,33 @@
             if (dwInt('email'))   { fixedWorks.analytics += 1; fixedWorks.design += 1; fixedWorks.backend += 32; fixedWorks.test += 8; }
             if (dwInt('metrics')) { fixedWorks.frontend += 8; fixedWorks.backend += 1; fixedWorks.test += 0.2; }
             if (dwInt('chat'))    { fixedWorks.frontend += 16; fixedWorks.backend += 1; fixedWorks.test += 0.2; }
+            // Кастомные интеграции из globalWorksSettings
+            Object.keys(state.integrationsData || {}).forEach(key => {
+                if (key.startsWith('custom_') && state.integrations[key] && !dwInt(key)) return;
+                if (key.startsWith('custom_') && state.integrations[key]) {
+                    const intg = state.integrationsData[key];
+                    fixedWorks.analytics += intg.analytics || 0;
+                    fixedWorks.design    += intg.design    || 0;
+                    fixedWorks.frontend  += intg.frontend  || 0;
+                    fixedWorks.backend   += intg.backend   || 0;
+                    fixedWorks.test      += intg.test      || 0;
+                }
+            });
 
             // Testing works
-            const testingOperations = dwPct(blocksTotal.test, 'testingOperations');
-            const testingProd       = dwPct(blocksTotal.test, 'testingProd');
-            fixedWorks.test += testingOperations + testingProd + dwFix('testingArtifacts') + dwFix('testingPrototypes') + dwFix('testingDesign') + dwFix('testingPerformance') + dwFix('testingContent');
+            const testingBase       = blocksTotal.test + customT;
+            const testingOperations = dwPct(testingBase, 'testingOperations');
+            const testingProd       = dwPct(testingBase, 'testingProd');
+            fixedWorks.test += testingOperations + testingProd + dwFix('testingArtifacts') + dwFix('testingPrototypes') + dwFix('testingDesign') + dwFix('testingPerformance') + dwFix('testingContent') + customT;
             setText('testingOperations', testingOperations.toFixed(0));
             setText('testingProd', testingProd.toFixed(0));
 
             // Content works
-            fixedWorks.content = dwFix('contentFill') + dwFix('contentInstruction') + 8;
+            fixedWorks.content = dwFix('contentFill') + dwFix('contentInstruction') + 8 + customC;
             fixedWorks.analytics += 4;
             fixedWorks.frontend += 8;
             fixedWorks.backend += 8;
             fixedWorks.test += 4;
-
-            // Add custom works
-            if (state.customWorks) {
-                (state.customWorks.analytics || []).forEach(w => fixedWorks.analytics += w.hours);
-                (state.customWorks.design || []).forEach(w => fixedWorks.design += w.hours);
-                (state.customWorks.frontend || []).forEach(w => fixedWorks.frontend += w.hours);
-                (state.customWorks.backend || []).forEach(w => fixedWorks.backend += w.hours);
-                (state.customWorks.testing || []).forEach(w => fixedWorks.test += w.hours);
-                (state.customWorks.content || []).forEach(w => fixedWorks.content += w.hours);
-                (state.customWorks.integrations || []).forEach(w => fixedWorks.backend += w.hours);
-            }
 
             // 3. Total with works
             const totalWithWorks = {
@@ -2818,14 +2834,13 @@
             const works = state.customWorks[category] || [];
             return works.map(work => `
                 <div class="work-item">
-                    <div></div>
+                    <button class="work-delete-btn" onclick="deleteCustomWork('${category}', ${work.id})" title="Удалить">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
                     <div class="work-name"><input type="text" value="${work.name || ''}" style="width:250px;border:1px solid #E2E8F0;border-radius:4px;padding:4px 8px;" onchange="updateCustomWorkName('${category}', ${work.id}, this.value)"></div>
-                    <div class="work-formula">Добавлено</div>
-                    <div class="work-hours" style="display:flex;align-items:center;gap:8px;">
+                    <div class="work-formula">Фиксировано</div>
+                    <div class="work-hours">
                         <input type="number" value="${work.hours || 0}" min="0" style="width:70px;text-align:right;" onchange="updateCustomWorkHours('${category}', ${work.id}, this.value)">
-                        <button class="icon-btn delete" onclick="deleteCustomWork('${category}', ${work.id})" style="padding:4px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </button>
                     </div>
                 </div>
             `).join('');
@@ -4155,9 +4170,9 @@
                     title: 'Работы по аналитике',
                     color: 'easy',
                     percentages: [
-                        { key: 'analyticsCuration', name: 'Курирование', hint: '% от суммы блоков' },
-                        { key: 'analyticsOperations', name: 'Операционка', hint: '% от суммы блоков' },
-                        { key: 'analyticsPreparation', name: 'Подготовка макетов к этапам', hint: '% от суммы блоков' }
+                        { key: 'analyticsCuration', name: 'Курирование', hint: '% от всех работ по аналитике' },
+                        { key: 'analyticsOperations', name: 'Операционка', hint: '% от всех работ по аналитике' },
+                        { key: 'analyticsPreparation', name: 'Подготовка макетов к этапам', hint: '% от блоков' }
                     ],
                     fixed: [
                         { key: 'analyticsBenchmark', name: 'Анализ конкурентного окружения' },
@@ -4170,10 +4185,10 @@
                     title: 'Работы по дизайну',
                     color: 'easy',
                     percentages: [
-                        { key: 'designOperations', name: 'Операционка', hint: '% от суммы блоков' },
-                        { key: 'designUIKit', name: 'UI-kit (общий)', hint: '% от суммы блоков' },
-                        { key: 'designUsedBlocks', name: 'Использование готовых блоков', hint: '% плюс' },
-                        { key: 'designSupervision', name: 'Авторский надзор', hint: '% от итого' }
+                        { key: 'designOperations', name: 'Операционка', hint: '% от всех работ по дизайну' },
+                        { key: 'designUIKit', name: 'UI-kit (общий)', hint: '% от блоков' },
+                        { key: 'designUsedBlocks', name: 'Использование готовых блоков', hint: '% от блоков (плюс)' },
+                        { key: 'designSupervision', name: 'Авторский надзор', hint: '% от всех работ по дизайну' }
                     ],
                     fixed: [
                         { key: 'designAnimMain', name: 'Анимации главной' },
@@ -4187,10 +4202,10 @@
                     title: 'Работы по Front-end',
                     color: 'medium',
                     percentages: [
-                        { key: 'frontendOperations', name: 'Операционка', hint: '% от суммы блоков' },
-                        { key: 'frontendReview', name: 'Ревью и курирование', hint: '% от суммы блоков' },
-                        { key: 'frontendBugs', name: 'Правка багов', hint: '% от суммы блоков' },
-                        { key: 'frontendIntegration', name: 'Интеграции front и back', hint: '% от суммы блоков' }
+                        { key: 'frontendOperations', name: 'Операционка', hint: '% от всех работ по front-end' },
+                        { key: 'frontendReview', name: 'Ревью и курирование', hint: '% от всех работ по front-end' },
+                        { key: 'frontendBugs', name: 'Правка багов', hint: '% от всех работ по front-end' },
+                        { key: 'frontendIntegration', name: 'Интеграции front и back', hint: '% от блоков + фикс. работ' }
                     ],
                     fixed: [
                         { key: 'frontendSetup', name: 'Разворачивание проекта' },
@@ -4203,9 +4218,9 @@
                     title: 'Работы по Back-end',
                     color: 'medium',
                     percentages: [
-                        { key: 'backendOperations', name: 'Операционка', hint: '% от суммы блоков' },
-                        { key: 'backendReview', name: 'Ревью и курирование', hint: '% от суммы блоков' },
-                        { key: 'backendBugs', name: 'Правка багов', hint: '% от суммы блоков' }
+                        { key: 'backendOperations', name: 'Операционка', hint: '% от всех работ по back-end' },
+                        { key: 'backendReview', name: 'Ревью и курирование', hint: '% от всех работ по back-end' },
+                        { key: 'backendBugs', name: 'Правка багов', hint: '% от всех работ по back-end' }
                     ],
                     fixed: [
                         { key: 'backendSetup', name: 'Разворачивание проекта' },
@@ -4219,8 +4234,8 @@
                     title: 'Работы по тестированию',
                     color: 'hard',
                     percentages: [
-                        { key: 'testingOperations', name: 'Операционка', hint: '% от суммы блоков' },
-                        { key: 'testingProd', name: 'Тестирование на проде', hint: '% от суммы блоков' }
+                        { key: 'testingOperations', name: 'Операционка', hint: '% от блоков' },
+                        { key: 'testingProd', name: 'Тестирование на проде', hint: '% от блоков' }
                     ],
                     fixed: [
                         { key: 'testingArtifacts', name: 'Отсмотр артефактов с аналитики' },
@@ -4321,19 +4336,19 @@
                             </tbody>
                         </table>`;
 
-                // Показываем глобальные кастомные работы этой секции
+                // Показываем глобальные кастомные работы этой секции — добавляем в ту же таблицу
                 const catKey = { 'Работы по аналитике': 'analytics', 'Работы по дизайну': 'design', 'Работы по Front-end': 'frontend', 'Работы по Back-end': 'backend', 'Работы по тестированию': 'testing', 'Работы по контенту': 'content' }[section.title];
                 const gCustom = (catKey && globalWorksSettings.customWorks[catKey]) || [];
                 if (gCustom.length > 0) {
-                    html += `<table class="admin-table"><tbody>`;
+                    html += `<table class="admin-table" style="margin-top:-1px;"><tbody>`;
                     gCustom.forEach(w => {
                         html += `<tr>
-                            <td><button class="delete-block-btn" onclick="deleteGlobalCustomWork('${catKey}', ${w.id})" title="Удалить">
+                            <td style="width:40px;"><button class="delete-block-btn" onclick="deleteGlobalCustomWork('${catKey}', ${w.id})" title="Удалить">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                             </button></td>
-                            <td class="block-name"><input type="text" value="${w.name}" style="border:1px solid #E2E8F0;border-radius:4px;padding:3px 8px;width:100%;font-size:13px;" onchange="updateGlobalCustomWork('${catKey}', ${w.id}, 'name', this.value)"></td>
-                            <td style="color:#10B981;font-weight:500;">Фикс. часы</td>
-                            <td><div style="display:flex;align-items:center;gap:4px;"><input type="number" value="${w.hours}" min="0" style="width:70px;text-align:right;" onchange="updateGlobalCustomWork('${catKey}', ${w.id}, 'hours', this.value)"><span style="color:#64748B;">ч</span></div></td>
+                            <td class="block-name"><input type="text" value="${w.name}" style="border:1px solid #E2E8F0;border-radius:4px;padding:3px 8px;width:100%;font-size:13px;text-align:left;" onchange="updateGlobalCustomWork('${catKey}', ${w.id}, 'name', this.value)"></td>
+                            <td style="color:#10B981;font-weight:500;width:120px;">Фикс. часы</td>
+                            <td style="width:120px;"><div style="display:flex;align-items:center;gap:4px;"><input type="number" value="${w.hours}" min="0" style="width:70px;text-align:right;" onchange="updateGlobalCustomWork('${catKey}', ${w.id}, 'hours', this.value)"><span style="color:#64748B;">ч</span></div></td>
                         </tr>`;
                     });
                     html += `</tbody></table>`;
