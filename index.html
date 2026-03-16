@@ -3420,7 +3420,13 @@
                             onchange="renameProject('${proj.id}', this.value)"
                             onclick="event.stopPropagation()">
                         <div class="project-meta">
-                            ${(() => { const catId = proj.snapshot?.categoryId; const cat = catId ? getCategoryById(catId) : null; return cat ? `<span style="background:${cat.color}20;color:${cat.color};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">${cat.name}</span>` : ''; })()}
+                            ${(() => {
+                                const catId = proj.snapshot?.categoryId;
+                                if (!catId) return `<span style="background:#F1F5F9;color:#94A3B8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;cursor:pointer;" onclick="assignCategoryToProject('${proj.id}')" title="Назначить категорию">Без категории ✎</span>`;
+                                const cat = getCategoryById(catId);
+                                if (!cat) return `<span style="background:#F1F5F9;color:#64748B;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;">${catId}</span>`;
+                                return `<span style="background:${cat.color}20;color:${cat.color};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">${cat.name}</span>`;
+                            })()}
                             <span>Создан: ${formatDate(proj.createdAt)}</span>
                             <span>Изменён: ${formatDate(proj.updatedAt)}</span>
                             ${isActive ? '<span style="color:#3B82F6;font-weight:600;">● Открыт сейчас</span>' : ''}
@@ -5394,6 +5400,26 @@
         }
 
         // Модал выбора категории
+        function assignCategoryToProject(projId) {
+            const catName = categoriesList.map((c, i) => `${i+1}. ${c.name}`).join('\n');
+            const idx = parseInt(prompt(`Выберите категорию:\n${catName}`, '1'));
+            if (!idx || idx < 1 || idx > categoriesList.length) return;
+            const cat = categoriesList[idx - 1];
+            const proj = projects.find(p => p.id === projId);
+            if (!proj) return;
+            if (!proj.snapshot) proj.snapshot = {};
+            proj.snapshot.categoryId = cat.id;
+            sbFetch('PATCH', TABLE + '?id=eq.' + projId, {
+                snapshot: proj.snapshot,
+                updated_at: new Date().toISOString()
+            }).then(() => {
+                if (projId === currentProjectId) state.categoryId = cat.id;
+                renderProjectsList();
+                updateCurrentProjectLabel();
+                showSuccess(`Категория «${cat.name}» назначена!`);
+            }).catch(e => showError('Ошибка.', e.message));
+        }
+
         function openCategoryModal() {
             _selectedCategoryId = categoriesList[0]?.id || null;
             document.getElementById('newProjectName').value = '';
