@@ -3567,12 +3567,15 @@
 
             const skip = -1; // маркер "пропустить строку"
 
+            const cTZ = dwFix('contentTZ');
+
             addSection('1.1', 'Предпроектная аналитика', [
                 ['Анализ конкурентного окружения',   dw.fixed.includes('analyticsBenchmark')  ? skip : dwFix('analyticsBenchmark'),  assignees.analytics],
                 ['Подготовка брифа и интервьюирование', dw.fixed.includes('analyticsBrief')   ? skip : dwFix('analyticsBrief'),      assignees.analytics],
                 ['Составление бизнес требований',    dw.fixed.includes('analyticsRequirements')? skip: dwFix('analyticsRequirements'),assignees.analytics],
                 ['Составление структуры',            dw.fixed.includes('analyticsStructure')  ? skip : dwFix('analyticsStructure'),  assignees.analytics],
                 ['Ревью и правки',                   aReview,                                                                        assignees.analytics],
+                ...(cTZ > 0 ? [['Участие в написании ТЗ', 4, assignees.analytics]] : []),
                 ...customA.map(w => [w.name, w.hours, assignees.analytics]),
                 ['Согласование аналитики',           '00',                                                                           assignees.client],
             ]);
@@ -3606,6 +3609,7 @@
                 ['Анимации внутренних',                  dw.fixed.includes('frontendAnimInner')? skip : dwFix('frontendAnimInner'),   assignees.frontend],
                 ['Интеграции front и back',              dw.percentages.includes('frontendIntegration') ? skip : feIntg,              assignees.frontend],
                 ['Ревью и правки',                       feRevTotal,                                                                   assignees.frontend],
+                ...(cTZ > 0 ? [['Участие в написании ТЗ', 8, assignees.frontend]] : []),
                 ...customFE.map(w => [w.name, w.hours, assignees.frontend]),
             ]);
 
@@ -3616,6 +3620,7 @@
                 ['Мультиязычность',                      dw.fixed.includes('backendMultilang') ? skip : dwFix('backendMultilang') + dwFix('backendMultilangFront'), assignees.backend],
                 ['Базовый поиск',                        dw.fixed.includes('backendSearch')    ? skip : dwFix('backendSearch') + dwFix('backendSearchFront'),       assignees.backend],
                 ['Ревью и правки',                       beRevTotal,                                                                   assignees.backend],
+                ...(cTZ > 0 ? [['Участие в написании ТЗ', 8, assignees.backend]] : []),
                 ...customBE.map(w => [w.name, w.hours, assignees.backend]),
                 ['Согласование разработки',              '00',                                                                         assignees.client],
             ]);
