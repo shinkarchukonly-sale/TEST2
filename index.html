@@ -732,6 +732,11 @@
 
         .work-name {
             font-size: 14px;
+            min-width: 0;
+        }
+        .work-name input[type="text"] {
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .work-formula {
@@ -876,12 +881,15 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 14px;
-            table-layout: fixed;
         }
-        .admin-table th:nth-child(1), .admin-table td:nth-child(1) { width: 40px; }
-        .admin-table th:nth-child(2), .admin-table td:nth-child(2) { width: auto; }
-        .admin-table th:nth-child(3), .admin-table td:nth-child(3) { width: 120px; }
-        .admin-table th:nth-child(4), .admin-table td:nth-child(4) { width: 130px; }
+        .admin-table th:nth-child(1), .admin-table td:nth-child(1) { width: 56px; }
+        .admin-table th:nth-child(2), .admin-table td:nth-child(2) { }
+        .admin-table th:nth-child(3), .admin-table td:nth-child(3) { width: 100px; }
+        .admin-table th:nth-child(4), .admin-table td:nth-child(4) { width: 100px; }
+        .admin-table th:nth-child(5), .admin-table td:nth-child(5) { width: 100px; }
+        .admin-table th:nth-child(6), .admin-table td:nth-child(6) { width: 100px; }
+        .admin-table th:nth-child(7), .admin-table td:nth-child(7) { width: 100px; }
+        .admin-table th:nth-child(8), .admin-table td:nth-child(8) { width: 80px; }
 
         .admin-table th {
             text-align: left;
@@ -2729,11 +2737,9 @@
 
         // State management
         function saveState() {
+            if (state._skipSave) return;
             localStorage.setItem('calculatorState', JSON.stringify(state));
-            // Автосохранение в Supabase с дебаунсом
-            if (currentProjectId) {
-                scheduleAutosave();
-            }
+            if (currentProjectId) scheduleAutosave();
         }
 
         let _autosaveTimer = null;
@@ -2818,25 +2824,17 @@
 
         // Custom works management
         function addCustomWork(category, name, hours) {
-            if (!state.customWorks[category]) {
-                state.customWorks[category] = [];
-            }
-            state.customWorks[category].push({
-                id: Date.now(),
-                name: name || 'Новая работа',
-                hours: hours || 0
-            });
+            if (!state.customWorks[category]) state.customWorks[category] = [];
+            state.customWorks[category].push({ id: Date.now(), name: name || 'Новая работа', hours: hours || 0 });
             renderFixedWorks();
             calculateTotals();
+            historyPush('Добавлена работа: ' + (name || 'Новая работа'));
             saveState();
         }
 
         function updateCustomWorkName(category, id, name) {
             const work = state.customWorks[category].find(w => w.id === id);
-            if (work) {
-                work.name = name;
-                saveState();
-            }
+            if (work) { work.name = name; saveState(); }
         }
 
         function updateCustomWorkHours(category, id, hours) {
@@ -2844,14 +2842,18 @@
             if (work) {
                 work.hours = parseFloat(hours) || 0;
                 calculateTotals();
+                historyPush('Изменены часы работы: ' + work.name);
                 saveState();
             }
         }
 
         function deleteCustomWork(category, id) {
+            const work = state.customWorks[category]?.find(w => w.id === id);
+            const label = work ? work.name : 'работа';
             state.customWorks[category] = state.customWorks[category].filter(w => w.id !== id);
             renderFixedWorks();
             calculateTotals();
+            historyPush('Удалена работа: ' + label);
             saveState();
         }
 
@@ -2863,7 +2865,7 @@
                     <button class="work-delete-btn" onclick="deleteCustomWork('${category}', ${work.id})" title="Удалить">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
-                    <div class="work-name"><input type="text" value="${work.name || ''}" style="min-width:200px;width:${Math.max(200, (work.name||'').length * 8 + 32)}px;max-width:500px;border:1px solid #E2E8F0;border-radius:4px;padding:4px 8px;" onchange="updateCustomWorkName('${category}', ${work.id}, this.value)" oninput="this.style.width=Math.max(200,this.value.length*8+32)+'px'"></div>
+                    <div class="work-name" style="flex:1;min-width:0;"><input type="text" value="${work.name || ''}" style="width:100%;border:1px solid #E2E8F0;border-radius:4px;padding:4px 8px;" onchange="updateCustomWorkName('${category}', ${work.id}, this.value)"></div>
                     <div class="work-formula">Фиксировано</div>
                     <div class="work-hours">
                         <input type="number" value="${work.hours || 0}" min="0" style="width:70px;text-align:right;" onchange="updateCustomWorkHours('${category}', ${work.id}, this.value)">
@@ -3118,6 +3120,14 @@
             isSaving = true;
             setSaveBtn('loading');
             try {
+                // Добавляем страницы ДО сохранения в Supabase
+                state._skipCalculate = true;
+                state._skipSave = true;
+                addPage('Главная страница');
+                addPage('О компании');
+                state._skipCalculate = false;
+                state._skipSave = false;
+
                 const snapshot = getStateSnapshot();
                 const rows = await sbFetch('POST', TABLE, {
                     name,
@@ -3134,22 +3144,9 @@
                 });
                 updateProjectsCount();
                 switchView('calculator');
-                state._skipCalculate = true;
-                addPage('Главная страница');
-                addPage('О компании');
-                state._skipCalculate = false;
                 renderPages();
                 renderFixedWorks();
                 calculateTotals();
-                // Обновляем snapshot в памяти с актуальными страницами и категорией
-                const finalSnapshot = getStateSnapshot();
-                const projInList = projects.find(p => p.id === row.id);
-                if (projInList) projInList.snapshot = finalSnapshot;
-                // Сохраняем в Supabase сразу
-                sbFetch('PATCH', TABLE + '?id=eq.' + row.id, {
-                    snapshot: finalSnapshot,
-                    updated_at: new Date().toISOString()
-                }).catch(() => {});
                 updateCurrentProjectLabel();
                 setSaveBtn('saved');
             } catch(e) {
@@ -4070,24 +4067,26 @@
                                             ondragover="onAdminBlockDragOver(event)"
                                             ondrop="onAdminBlockDrop(event)"
                                             ondragend="onAdminBlockDragEnd(event)">
-                                            <td style="display:flex;align-items:center;gap:4px;">
-                                                <span class="drag-handle" title="Перетащить">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
-                                                </span>
-                                                <button class="delete-block-btn" onclick="deleteAdminBlock('${difficulty}', ${index})" title="Удалить блок">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                                </button>
+                                            <td style="width:40px;text-align:center;vertical-align:middle;">
+                                                <div style="display:flex;align-items:center;justify-content:center;gap:2px;">
+                                                    <span class="drag-handle" title="Перетащить" style="cursor:grab;color:#CBD5E1;">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+                                                    </span>
+                                                    <button class="delete-block-btn" onclick="deleteAdminBlock('${difficulty}', ${index})" title="Удалить блок">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                                    </button>
+                                                </div>
                                             </td>
                                             <td class="block-name">
-                                                <input type="text" value="${block.name}" style="width: 100%; min-width: 200px;" 
+                                                <input type="text" value="${block.name.replace(/"/g,'&quot;')}" style="width:100%;border:1px solid #E2E8F0;border-radius:4px;padding:4px 8px;font-size:13px;text-align:left;"
                                                     onchange="updateBlockName('${difficulty}', ${index}, this.value)">
                                             </td>
-                                            <td><input type="number" step="1" value="${block.analytics}" onchange="updateBlockValue('${difficulty}', ${index}, 'analytics', this.value)"></td>
-                                            <td><input type="number" step="1" value="${block.design}" onchange="updateBlockValue('${difficulty}', ${index}, 'design', this.value)"></td>
-                                            <td><input type="number" step="1" value="${block.frontend}" onchange="updateBlockValue('${difficulty}', ${index}, 'frontend', this.value)"></td>
-                                            <td><input type="number" step="1" value="${block.backend}" onchange="updateBlockValue('${difficulty}', ${index}, 'backend', this.value)"></td>
-                                            <td><input type="number" step="1" value="${block.test}" onchange="updateBlockValue('${difficulty}', ${index}, 'test', this.value)"></td>
-                                            <td class="total-cell" id="total-${difficulty}-${index}">${total.toFixed(0)}</td>
+                                            <td><input type="number" step="0.1" value="${block.analytics}" onchange="updateBlockValue('${difficulty}', ${index}, 'analytics', this.value)"></td>
+                                            <td><input type="number" step="0.1" value="${block.design}" onchange="updateBlockValue('${difficulty}', ${index}, 'design', this.value)"></td>
+                                            <td><input type="number" step="0.1" value="${block.frontend}" onchange="updateBlockValue('${difficulty}', ${index}, 'frontend', this.value)"></td>
+                                            <td><input type="number" step="0.1" value="${block.backend}" onchange="updateBlockValue('${difficulty}', ${index}, 'backend', this.value)"></td>
+                                            <td><input type="number" step="0.1" value="${block.test}" onchange="updateBlockValue('${difficulty}', ${index}, 'test', this.value)"></td>
+                                            <td class="total-cell" id="total-${difficulty}-${index}" style="font-weight:700;color:#3B82F6;text-align:center;">${total % 1 === 0 ? total.toFixed(0) : total.toFixed(1)}</td>
                                         </tr>
                                     `;
                                 }).join('')}
@@ -4645,11 +4644,9 @@
             if (!state.disabledWorks[type]) state.disabledWorks[type] = [];
             if (!state.disabledWorks[type].includes(key)) {
                 state.disabledWorks[type].push(key);
+                historyPush('Удалена работа: ' + key);
                 renderFixedWorks();
-                requestAnimationFrame(() => {
-                    calculateTotals();
-                    saveState();
-                });
+                requestAnimationFrame(() => { calculateTotals(); saveState(); });
             }
         }
 
@@ -5553,13 +5550,46 @@
             const container = document.getElementById('categoryList');
             if (!container) return;
             container.innerHTML = categoriesList.map(cat => `
-                <label style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:2px solid ${_selectedCategoryId === cat.id ? cat.color : '#E2E8F0'};border-radius:10px;cursor:pointer;background:${_selectedCategoryId === cat.id ? cat.color + '10' : '#fff'};transition:all 0.15s;">
-                    <input type="radio" name="projectCategory" value="${cat.id}" ${_selectedCategoryId === cat.id ? 'checked' : ''} style="display:none;" onchange="_selectedCategoryId='${cat.id}';renderCategoryList()">
-                    <span style="width:12px;height:12px;border-radius:50%;background:${cat.color};flex-shrink:0;"></span>
-                    <span style="font-size:14px;font-weight:${_selectedCategoryId === cat.id ? '600' : '400'};color:#1E293B;">${cat.name}</span>
-                    ${_selectedCategoryId === cat.id ? `<svg style="margin-left:auto;color:${cat.color}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
-                </label>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <label style="flex:1;display:flex;align-items:center;gap:12px;padding:10px 14px;border:2px solid ${_selectedCategoryId === cat.id ? cat.color : '#E2E8F0'};border-radius:10px;cursor:pointer;background:${_selectedCategoryId === cat.id ? cat.color + '10' : '#fff'};transition:all 0.15s;">
+                        <input type="radio" name="projectCategory" value="${cat.id}" ${_selectedCategoryId === cat.id ? 'checked' : ''} style="display:none;" onchange="_selectedCategoryId='${cat.id}';renderCategoryList()">
+                        <span style="width:12px;height:12px;border-radius:50%;background:${cat.color};flex-shrink:0;"></span>
+                        <span style="font-size:14px;font-weight:${_selectedCategoryId === cat.id ? '600' : '400'};color:#1E293B;">${cat.name}</span>
+                        ${_selectedCategoryId === cat.id ? `<svg style="margin-left:auto;color:${cat.color}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+                    </label>
+                    <button onclick="renameCategory('${cat.id}')" title="Переименовать" style="flex-shrink:0;background:none;border:1px solid #E2E8F0;border-radius:6px;padding:6px 8px;cursor:pointer;color:#64748B;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='none'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button onclick="deleteCategory('${cat.id}')" title="Удалить категорию" style="flex-shrink:0;background:none;border:1px solid #FEE2E2;border-radius:6px;padding:6px 8px;cursor:pointer;color:#EF4444;" onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='none'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </div>
             `).join('');
+        }
+
+        function renameCategory(catId) {
+            const cat = categoriesList.find(c => c.id === catId);
+            if (!cat) return;
+            const newName = prompt('Новое название категории:', cat.name);
+            if (!newName || !newName.trim() || newName.trim() === cat.name) return;
+            cat.name = newName.trim();
+            renderCategoryList();
+            saveCategoriesList().catch(e => console.error(e));
+            // Обновить бейджи в списке проектов
+            renderProjectsList && renderProjectsList();
+            updateCurrentProjectLabel();
+        }
+
+        function deleteCategory(catId) {
+            const cat = categoriesList.find(c => c.id === catId);
+            if (!cat) return;
+            if (categoriesList.length <= 1) { showError('Нельзя удалить последнюю категорию.'); return; }
+            if (!confirm(`Удалить категорию «${cat.name}»?\n\nПроекты этой категории останутся, но потеряют привязку к ней.`)) return;
+            categoriesList = categoriesList.filter(c => c.id !== catId);
+            if (_selectedCategoryId === catId) _selectedCategoryId = categoriesList[0]?.id || null;
+            renderCategoryList();
+            saveCategoriesList().catch(e => console.error(e));
+            renderProjectsList && renderProjectsList();
         }
 
         function addNewCategory() {
