@@ -5645,8 +5645,9 @@
             const name = nameEl ? nameEl.value.trim() : '';
             if (!name) { if (nameEl) { nameEl.style.borderColor = '#EF4444'; nameEl.focus(); } return; }
             if (!_selectedCategoryId) { showError('Выберите категорию проекта.'); return; }
+            const catId = _selectedCategoryId; // сохраняем ДО закрытия модала
             closeCategoryModal();
-            await createNewProjectWithCategory(name, _selectedCategoryId);
+            await createNewProjectWithCategory(name, catId);
         }
         const HISTORY_MAX = 50;
         let _history = [];      // массив снапшотов {snapshot, label, time}
