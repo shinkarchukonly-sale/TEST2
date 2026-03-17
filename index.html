@@ -3630,6 +3630,7 @@
                 ['Отсмотр дизайн-макетов',                  dw.fixed.includes('testingDesign')      ? skip : dwFix('testingDesign'),      assignees.testing],
                 ['Тестирование производительности',          dw.fixed.includes('testingPerformance') ? skip : dwFix('testingPerformance'), assignees.testing],
                 ['Тестирование с контентом',                 dw.fixed.includes('testingContent')     ? skip : dwFix('testingContent'),     assignees.testing],
+                ...(dwFix('contentTZ') > 0 ? [['Тестирование наполнения', 4, assignees.testing]] : []),
                 ...customT.map(w => [w.name, w.hours, assignees.testing]),
             ]);
 
@@ -4619,11 +4620,15 @@
         }
 
         function disableWorkMain(type, key) {
+            if (!state.disabledWorks) state.disabledWorks = { percentages: [], fixed: [], integrations: [] };
+            if (!state.disabledWorks[type]) state.disabledWorks[type] = [];
             if (!state.disabledWorks[type].includes(key)) {
                 state.disabledWorks[type].push(key);
                 renderFixedWorks();
-                calculateTotals();
-                saveState(); // сохраняет только в snapshot проекта, не в глобальные настройки
+                requestAnimationFrame(() => {
+                    calculateTotals();
+                    saveState();
+                });
             }
         }
 
@@ -4696,9 +4701,11 @@
                     });
                     showSuccess('Настройки работ сохранены глобально!');
                 }
-                // Если редактируем текущую категорию проекта — применяем к state
+                // Если редактируем текущую категорию проекта — применяем только percentages/fixedValues, не disabledWorks
                 if (catId && catId === state.categoryId) {
+                    const savedDisabled = JSON.parse(JSON.stringify(state.disabledWorks));
                     applyCategoryToState(catId);
+                    state.disabledWorks = savedDisabled; // восстанавливаем проектные удалённые работы
                     renderFixedWorks();
                     calculateTotals();
                 }
