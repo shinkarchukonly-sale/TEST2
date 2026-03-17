@@ -3129,6 +3129,7 @@
                 state._skipSave = false;
 
                 const snapshot = getStateSnapshot();
+                snapshot.categoryId = catId; // гарантируем что categoryId есть
                 const rows = await sbFetch('POST', TABLE, {
                     name,
                     snapshot,
@@ -5514,23 +5515,60 @@
 
         // Модал выбора категории
         function assignCategoryToProject(projId) {
-            const catName = categoriesList.map((c, i) => `${i+1}. ${c.name}`).join('\n');
-            const idx = parseInt(prompt(`Выберите категорию:\n${catName}`, '1'));
-            if (!idx || idx < 1 || idx > categoriesList.length) return;
-            const cat = categoriesList[idx - 1];
+            // Используем тот же модал что и при создании проекта
+            _assigningToProjId = projId;
+            _selectedCategoryId = categoriesList[0]?.id || null;
+            renderCategoryList();
+            // Показываем модал в режиме назначения (без поля имени)
+            document.getElementById('newProjectName').closest('div').style.display = 'none';
+            document.querySelector('#categoryModal .modal-header h3').textContent = 'Выбрать категорию';
+            document.querySelector('#categoryModal button[onclick="confirmCategoryAndCreate()"]').textContent = 'Назначить';
+            document.querySelector('#categoryModal button[onclick="confirmCategoryAndCreate()"]').onclick = confirmAssignCategory;
+            document.getElementById('categoryModal').classList.add('active');
+        }
+
+        let _assigningToProjId = null;
+
+        function confirmAssignCategory() {
+            if (!_selectedCategoryId) { showError('Выберите категорию.'); return; }
+            const projId = _assigningToProjId;
+            // Восстанавливаем модал в исходный вид
+            closeCategoryModal();
+            _restoreCategoryModal();
+
             const proj = projects.find(p => p.id === projId);
             if (!proj) return;
             if (!proj.snapshot) proj.snapshot = {};
-            proj.snapshot.categoryId = cat.id;
+            proj.snapshot.categoryId = _selectedCategoryId;
             sbFetch('PATCH', TABLE + '?id=eq.' + projId, {
                 snapshot: proj.snapshot,
                 updated_at: new Date().toISOString()
             }).then(() => {
-                if (projId === currentProjectId) state.categoryId = cat.id;
+                if (projId === currentProjectId) {
+                    state.categoryId = _selectedCategoryId;
+                    updateCurrentProjectLabel();
+                }
                 renderProjectsList();
-                updateCurrentProjectLabel();
-                showSuccess(`Категория «${cat.name}» назначена!`);
+                showSuccess(`Категория «${getCategoryById(_selectedCategoryId)?.name}» назначена!`);
             }).catch(e => showError('Ошибка.', e.message));
+            _assigningToProjId = null;
+        }
+
+        function _restoreCategoryModal() {
+            const nameDiv = document.getElementById('newProjectName')?.closest('div');
+            if (nameDiv) nameDiv.style.display = '';
+            const h3 = document.querySelector('#categoryModal .modal-header h3');
+            if (h3) h3.textContent = 'Новый проект';
+            const btn = document.querySelector('#categoryModal button[onclick*="confirm"]') ||
+                        document.querySelector('#categoryModal .btn-primary');
+            if (btn) { btn.textContent = 'Создать проект'; btn.onclick = confirmCategoryAndCreate; }
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').classList.remove('active');
+            _restoreCategoryModal();
+            _selectedCategoryId = null;
+            _assigningToProjId = null;
         }
 
         function openCategoryModal() {
@@ -5541,10 +5579,6 @@
             setTimeout(() => document.getElementById('newProjectName').focus(), 100);
         }
 
-        function closeCategoryModal() {
-            document.getElementById('categoryModal').classList.remove('active');
-            _selectedCategoryId = null;
-        }
 
         function renderCategoryList() {
             const container = document.getElementById('categoryList');
