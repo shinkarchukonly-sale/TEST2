@@ -5001,15 +5001,19 @@
             input.focus();
             input.select();
             const save = () => {
+                if (save._done) return;
+                save._done = true;
                 const newVal = Math.max(0, Math.round(parseFloat(input.value) || 0));
                 const page = state.pages.find(p => p.id === pageId);
                 if (page) {
                     const block = page.blocks.find(b => b.id === blockId);
-                    if (block) {
+                    if (block && block[field] !== newVal) {
                         block[field] = newVal;
-                        calculateTotals();
                         historyPush('Изменены часы: ' + block.name);
+                        calculateTotals();
                         saveState();
+                        renderPages();
+                    } else {
                         renderPages();
                     }
                 }
@@ -5571,9 +5575,7 @@
 
         function historyPush(label) {
             if (_historyLock) return;
-            if (!currentProjectId) return;
             const snapshot = JSON.parse(JSON.stringify(getStateSnapshot()));
-            // Если мы не в конце — срезаем "будущее"
             if (_historyIdx < _history.length - 1) {
                 _history = _history.slice(0, _historyIdx + 1);
             }
@@ -5585,28 +5587,32 @@
 
         function historyRestore(idx) {
             if (idx < 0 || idx >= _history.length) return;
-            _historyIdx = idx;
             _historyLock = true;
-            const entry = _history[idx];
-            const s = entry.snapshot;
-            if (s.pages) {
-                state.pages = JSON.parse(JSON.stringify(s.pages));
+            try {
+                _historyIdx = idx;
+                const s = _history[idx].snapshot;
+                if (s.pages) state.pages = JSON.parse(JSON.stringify(s.pages));
+                if (s.percentages) Object.assign(state.percentages, s.percentages);
+                if (s.fixedValues)  Object.assign(state.fixedValues, s.fixedValues);
+                if (s.integrations) Object.assign(state.integrations, s.integrations);
+                if (s.customWorks)  Object.keys(s.customWorks).forEach(k => {
+                    if (Array.isArray(s.customWorks[k])) state.customWorks[k] = s.customWorks[k];
+                });
+                if (s.disabledWorks) {
+                    state.disabledWorks.percentages  = s.disabledWorks.percentages  || [];
+                    state.disabledWorks.fixed        = s.disabledWorks.fixed        || [];
+                    state.disabledWorks.integrations = s.disabledWorks.integrations || [];
+                }
+                renderPages();
+                renderFixedWorks();
+                requestAnimationFrame(() => {
+                    calculateTotals();
+                    updateHistoryUI();
+                    scheduleAutosave();
+                });
+            } finally {
+                _historyLock = false;
             }
-            if (s.percentages) Object.assign(state.percentages, s.percentages);
-            if (s.fixedValues)  Object.assign(state.fixedValues, s.fixedValues);
-            if (s.integrations) Object.assign(state.integrations, s.integrations);
-            if (s.customWorks)  Object.keys(s.customWorks).forEach(k => { if (Array.isArray(s.customWorks[k])) state.customWorks[k] = s.customWorks[k]; });
-            if (s.disabledWorks) {
-                state.disabledWorks.percentages = s.disabledWorks.percentages || [];
-                state.disabledWorks.fixed       = s.disabledWorks.fixed       || [];
-                state.disabledWorks.integrations = s.disabledWorks.integrations || [];
-            }
-            _historyLock = false;
-            renderPages();
-            renderFixedWorks();
-            calculateTotals();
-            updateHistoryUI();
-            scheduleAutosave();
         }
 
         function historyUndo() {
