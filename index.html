@@ -3134,6 +3134,15 @@
                 renderPages();
                 renderFixedWorks();
                 calculateTotals();
+                // Обновляем snapshot в памяти с актуальными страницами и категорией
+                const finalSnapshot = getStateSnapshot();
+                const projInList = projects.find(p => p.id === row.id);
+                if (projInList) projInList.snapshot = finalSnapshot;
+                // Сохраняем в Supabase сразу
+                sbFetch('PATCH', TABLE + '?id=eq.' + row.id, {
+                    snapshot: finalSnapshot,
+                    updated_at: new Date().toISOString()
+                }).catch(() => {});
                 updateCurrentProjectLabel();
                 setSaveBtn('saved');
             } catch(e) {
