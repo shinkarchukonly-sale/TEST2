@@ -1269,22 +1269,27 @@
                     <div class="summary-item">
                         <div class="summary-label">Аналитика</div>
                         <div class="summary-value" id="firstTwoPagesAnalytics">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="firstTwoPagesAnalyticsCost">0 ₽</div>
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">Дизайн</div>
                         <div class="summary-value" id="firstTwoPagesDesign">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="firstTwoPagesDesignCost">0 ₽</div>
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">Front-end</div>
                         <div class="summary-value" id="firstTwoPagesFrontend">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="firstTwoPagesFrontendCost">0 ₽</div>
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">Back-end</div>
                         <div class="summary-value" id="firstTwoPagesBackend">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="firstTwoPagesBackendCost">0 ₽</div>
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">Test</div>
                         <div class="summary-value" id="firstTwoPagesTest">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="firstTwoPagesTestCost">0 ₽</div>
                     </div>
                     <div class="summary-item">
                         <div class="summary-label"></div>
@@ -1293,6 +1298,7 @@
                     <div class="summary-item">
                         <div class="summary-label">ВСЕГО</div>
                         <div class="summary-value" id="firstTwoPagesTotal">0</div>
+                        <div style="font-size:11px;color:#3B82F6;margin-top:2px;font-weight:600;" id="firstTwoPagesTotalCost">0 ₽</div>
                     </div>
                 </div>
             </div>
@@ -1304,22 +1310,27 @@
                     <div class="summary-item">
                         <div class="summary-label">Аналитика</div>
                         <div class="summary-value" id="totalBlocksAnalytics">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalBlocksAnalyticsCost">0 ₽</div>
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">Дизайн</div>
                         <div class="summary-value" id="totalBlocksDesign">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalBlocksDesignCost">0 ₽</div>
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">Front-end</div>
                         <div class="summary-value" id="totalBlocksFrontend">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalBlocksFrontendCost">0 ₽</div>
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">Back-end</div>
                         <div class="summary-value" id="totalBlocksBackend">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalBlocksBackendCost">0 ₽</div>
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">Test</div>
                         <div class="summary-value" id="totalBlocksTest">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalBlocksTestCost">0 ₽</div>
                     </div>
                     <div class="summary-item">
                         <div class="summary-label"></div>
@@ -1328,6 +1339,7 @@
                     <div class="summary-item">
                         <div class="summary-label">ВСЕГО</div>
                         <div class="summary-value" id="totalBlocksTotal">0</div>
+                        <div style="font-size:11px;color:#1E293B;margin-top:2px;font-weight:600;" id="totalBlocksTotalCost">0 ₽</div>
                     </div>
                 </div>
             </div>
@@ -1342,77 +1354,133 @@
                     <div class="collapsible-section">
                         <div class="collapsible-header" onclick="toggleCollapsible(this)">
                             <div style="font-weight: 600;">Работы по аналитике</div>
+                            <div style="display:flex;align-items:center;gap:16px;margin-left:auto;margin-right:12px;">
+                                <span style="font-size:13px;color:#64748B;font-weight:400;"><span id="sectionHoursAnalytics">0</span> ч</span>
+                                <span style="font-size:13px;color:#3B82F6;font-weight:600;" id="sectionCostAnalytics">0 ₽</span>
+                            </div>
                             <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
-                        <div class="collapsible-content active" id="analyticsWorksContent">
-                            <!-- Will be rendered by JS -->
-                        </div>
+                        <div class="collapsible-content active" id="analyticsWorksContent"></div>
                     </div>
 
                     <!-- Design Works -->
                     <div class="collapsible-section">
                         <div class="collapsible-header" onclick="toggleCollapsible(this)">
                             <div style="font-weight: 600;">Работы по дизайну</div>
+                            <div style="display:flex;align-items:center;gap:16px;margin-left:auto;margin-right:12px;">
+                                <span style="font-size:13px;color:#64748B;font-weight:400;"><span id="sectionHoursDesign">0</span> ч</span>
+                                <span style="font-size:13px;color:#3B82F6;font-weight:600;" id="sectionCostDesign">0 ₽</span>
+                            </div>
                             <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
-                        <div class="collapsible-content" id="designWorksContent">
-                            <!-- Will be rendered by JS -->
-                        </div>
+                        <div class="collapsible-content" id="designWorksContent"></div>
                     </div>
 
                     <!-- Frontend Works -->
                     <div class="collapsible-section">
                         <div class="collapsible-header" onclick="toggleCollapsible(this)">
                             <div style="font-weight: 600;">Работы по разработке: Front-end</div>
+                            <div style="display:flex;align-items:center;gap:16px;margin-left:auto;margin-right:12px;">
+                                <span style="font-size:13px;color:#64748B;font-weight:400;"><span id="sectionHoursFrontend">0</span> ч</span>
+                                <span style="font-size:13px;color:#3B82F6;font-weight:600;" id="sectionCostFrontend">0 ₽</span>
+                            </div>
                             <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
-                        <div class="collapsible-content" id="frontendWorksContent">
-                            <!-- Will be rendered by JS -->
-                        </div>
+                        <div class="collapsible-content" id="frontendWorksContent"></div>
                     </div>
 
                     <!-- Backend Works -->
                     <div class="collapsible-section">
                         <div class="collapsible-header" onclick="toggleCollapsible(this)">
                             <div style="font-weight: 600;">Работы по разработке: Back-end</div>
+                            <div style="display:flex;align-items:center;gap:16px;margin-left:auto;margin-right:12px;">
+                                <span style="font-size:13px;color:#64748B;font-weight:400;"><span id="sectionHoursBackend">0</span> ч</span>
+                                <span style="font-size:13px;color:#3B82F6;font-weight:600;" id="sectionCostBackend">0 ₽</span>
+                            </div>
                             <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
-                        <div class="collapsible-content" id="backendWorksContent">
-                            <!-- Will be rendered by JS -->
-                        </div>
+                        <div class="collapsible-content" id="backendWorksContent"></div>
                     </div>
 
                     <!-- Integrations -->
                     <div class="collapsible-section">
                         <div class="collapsible-header" onclick="toggleCollapsible(this)">
                             <div style="font-weight: 600;">Интеграции</div>
+                            <div style="display:flex;align-items:center;gap:16px;margin-left:auto;margin-right:12px;">
+                                <span style="font-size:13px;color:#64748B;font-weight:400;"><span id="sectionHoursIntegrations">0</span> ч</span>
+                                <span style="font-size:13px;color:#3B82F6;font-weight:600;" id="sectionCostIntegrations">0 ₽</span>
+                            </div>
                             <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
-                        <div class="collapsible-content" id="integrationsContent">
-                            <!-- Will be rendered by JS -->
-                        </div>
+                        <div class="collapsible-content" id="integrationsContent"></div>
                     </div>
 
                     <!-- Testing Works -->
                     <div class="collapsible-section">
                         <div class="collapsible-header" onclick="toggleCollapsible(this)">
                             <div style="font-weight: 600;">Работы по тестированию</div>
+                            <div style="display:flex;align-items:center;gap:16px;margin-left:auto;margin-right:12px;">
+                                <span style="font-size:13px;color:#64748B;font-weight:400;"><span id="sectionHoursTesting">0</span> ч</span>
+                                <span style="font-size:13px;color:#3B82F6;font-weight:600;" id="sectionCostTesting">0 ₽</span>
+                            </div>
                             <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
-                        <div class="collapsible-content" id="testingWorksContent">
-                            <!-- Will be rendered by JS -->
-                        </div>
+                        <div class="collapsible-content" id="testingWorksContent"></div>
                     </div>
 
                     <!-- Content Works -->
                     <div class="collapsible-section">
                         <div class="collapsible-header" onclick="toggleCollapsible(this)">
                             <div style="font-weight: 600;">Работы по контенту</div>
+                            <div style="display:flex;align-items:center;gap:16px;margin-left:auto;margin-right:12px;">
+                                <span style="font-size:13px;color:#64748B;font-weight:400;"><span id="sectionHoursContent">0</span> ч</span>
+                                <span style="font-size:13px;color:#3B82F6;font-weight:600;" id="sectionCostContent">0 ₽</span>
+                            </div>
                             <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
-                        <div class="collapsible-content" id="contentWorksContent">
-                            <!-- Will be rendered by JS -->
-                        </div>
+                        <div class="collapsible-content" id="contentWorksContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fixed works subtotal -->
+            <div class="summary-block" style="border-color:#C4B5FD;">
+                <div class="summary-title">ИТОГО: ФИКСИРОВАННЫЕ РАБОТЫ</div>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-label">Аналитика</div>
+                        <div class="summary-value" id="fixedAnalytics">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="fixedAnalyticsCost">0 ₽</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Дизайн</div>
+                        <div class="summary-value" id="fixedDesign">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="fixedDesignCost">0 ₽</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Front-end</div>
+                        <div class="summary-value" id="fixedFrontend">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="fixedFrontendCost">0 ₽</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Back-end</div>
+                        <div class="summary-value" id="fixedBackend">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="fixedBackendCost">0 ₽</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Test</div>
+                        <div class="summary-value" id="fixedTest">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="fixedTestCost">0 ₽</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Контент</div>
+                        <div class="summary-value" id="fixedContent">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="fixedContentCost">0 ₽</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">ВСЕГО</div>
+                        <div class="summary-value" id="fixedTotal">0</div>
+                        <div style="font-size:11px;color:#8B5CF6;margin-top:2px;font-weight:600;" id="fixedTotalCost">0 ₽</div>
                     </div>
                 </div>
             </div>
@@ -1452,101 +1520,59 @@
                 </div>
             </div>
 
-            <!-- Modifiers Section -->
-            <div class="section">
-                <div class="section-header">
-                    <h2 class="section-title">Модификаторы проекта</h2>
+            <!-- Modifiers Section (collapsible) -->
+            <div class="collapsible-section" style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;margin-bottom:16px;">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)" style="padding:16px 20px;">
+                    <div style="font-weight:600;font-size:15px;">Модификаторы проекта</div>
+                    <div style="display:flex;align-items:center;gap:16px;margin-left:auto;margin-right:12px;">
+                        <span style="font-size:13px;color:#64748B;" id="modifierSummaryText">без модификаторов</span>
+                    </div>
+                    <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
-                <div class="section-content">
-                    <div class="modifier-group">
-                        <label class="modifier-label">АПСЕЙЛ</label>
-                        <input type="number" value="0" min="0" id="upsaleHours" onchange="calculateTotals()">
-                        <span style="margin-left: 8px; color: #64748B;">доп. часов</span>
-                    </div>
-
-                    <div class="modifier-group">
-                        <label class="modifier-label">СЛОЖНОСТЬ ЗАКАЗЧИКА</label>
-                        <div class="radio-group">
-                            <label class="radio-item">
-                                <input type="radio" name="clientComplexity" value="0" checked onchange="calculateTotals()">
-                                <span>Адекватный</span>
-                            </label>
-                            <label class="radio-item">
-                                <input type="radio" name="clientComplexity" value="10" onchange="calculateTotals()">
-                                <span>Сложный (+10%)</span>
-                            </label>
-                            <label class="radio-item">
-                                <input type="radio" name="clientComplexity" value="20" onchange="calculateTotals()">
-                                <span>Очень сложный (+20%)</span>
-                            </label>
+                <div class="collapsible-content" style="padding:0 20px 20px;">
+                    <div class="section-content" style="padding:0;">
+                        <div class="modifier-group">
+                            <label class="modifier-label">АПСЕЙЛ</label>
+                            <input type="number" value="0" min="0" id="upsaleHours" onchange="calculateTotals()">
+                            <span style="margin-left: 8px; color: #64748B;">доп. часов</span>
+                        </div>
+                        <div class="modifier-group">
+                            <label class="modifier-label">СЛОЖНОСТЬ ЗАКАЗЧИКА</label>
+                            <div class="radio-group">
+                                <label class="radio-item"><input type="radio" name="clientComplexity" value="0" checked onchange="calculateTotals()"><span>Адекватный</span></label>
+                                <label class="radio-item"><input type="radio" name="clientComplexity" value="10" onchange="calculateTotals()"><span>Сложный (+10%)</span></label>
+                                <label class="radio-item"><input type="radio" name="clientComplexity" value="20" onchange="calculateTotals()"><span>Очень сложный (+20%)</span></label>
+                            </div>
+                        </div>
+                        <div class="modifier-group">
+                            <label class="modifier-label">ВНУТРЕННИЕ ЦЕЛИ</label>
+                            <div class="radio-group">
+                                <label class="radio-item"><input type="radio" name="internalGoals" value="0" checked onchange="calculateTotals()"><span>Не интересно</span></label>
+                                <label class="radio-item"><input type="radio" name="internalGoals" value="5" onchange="calculateTotals()"><span>Интересно (+5%)</span></label>
+                                <label class="radio-item"><input type="radio" name="internalGoals" value="10" onchange="calculateTotals()"><span>Очень интересно (+10%)</span></label>
+                            </div>
+                        </div>
+                        <div class="modifier-group">
+                            <label class="modifier-label">РЕЛИЗ С MVP</label>
+                            <div class="radio-group">
+                                <label class="radio-item"><input type="radio" name="mvp" value="0" checked onchange="calculateTotals()"><span>Без MVP</span></label>
+                                <label class="radio-item"><input type="radio" name="mvp" value="15" onchange="calculateTotals()"><span>С MVP (+15%)</span></label>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="modifier-group">
-                        <label class="modifier-label">ВНУТРЕННИЕ ЦЕЛИ</label>
-                        <div class="radio-group">
-                            <label class="radio-item">
-                                <input type="radio" name="internalGoals" value="0" checked onchange="calculateTotals()">
-                                <span>Не интересно</span>
-                            </label>
-                            <label class="radio-item">
-                                <input type="radio" name="internalGoals" value="5" onchange="calculateTotals()">
-                                <span>Интересно (+5%)</span>
-                            </label>
-                            <label class="radio-item">
-                                <input type="radio" name="internalGoals" value="10" onchange="calculateTotals()">
-                                <span>Очень интересно (+10%)</span>
-                            </label>
+                    <!-- Subtotal with modifiers (inside collapsible) -->
+                    <div class="summary-block" style="margin-top:16px;margin-bottom:0;">
+                        <div class="summary-title">ИТОГО: С МОДИФИКАТОРАМИ</div>
+                        <div class="summary-grid">
+                            <div class="summary-item"><div class="summary-label">Аналитика</div><div class="summary-value" id="totalModifiedAnalytics">0</div></div>
+                            <div class="summary-item"><div class="summary-label">Дизайн</div><div class="summary-value" id="totalModifiedDesign">0</div></div>
+                            <div class="summary-item"><div class="summary-label">Front-end</div><div class="summary-value" id="totalModifiedFrontend">0</div></div>
+                            <div class="summary-item"><div class="summary-label">Back-end</div><div class="summary-value" id="totalModifiedBackend">0</div></div>
+                            <div class="summary-item"><div class="summary-label">Test</div><div class="summary-value" id="totalModifiedTest">0</div></div>
+                            <div class="summary-item"><div class="summary-label">Контент</div><div class="summary-value" id="totalModifiedContent">0</div></div>
+                            <div class="summary-item"><div class="summary-label">ВСЕГО</div><div class="summary-value" id="totalModifiedTotal">0</div></div>
                         </div>
-                    </div>
-
-                    <div class="modifier-group">
-                        <label class="modifier-label">РЕЛИЗ С MVP</label>
-                        <div class="radio-group">
-                            <label class="radio-item">
-                                <input type="radio" name="mvp" value="0" checked onchange="calculateTotals()">
-                                <span>Без MVP</span>
-                            </label>
-                            <label class="radio-item">
-                                <input type="radio" name="mvp" value="15" onchange="calculateTotals()">
-                                <span>С MVP (+15%)</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Total with modifiers -->
-            <div class="summary-block">
-                <div class="summary-title">ИТОГО: С МОДИФИКАТОРАМИ</div>
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <div class="summary-label">Аналитика</div>
-                        <div class="summary-value" id="totalModifiedAnalytics">0</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Дизайн</div>
-                        <div class="summary-value" id="totalModifiedDesign">0</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Front-end</div>
-                        <div class="summary-value" id="totalModifiedFrontend">0</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Back-end</div>
-                        <div class="summary-value" id="totalModifiedBackend">0</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Test</div>
-                        <div class="summary-value" id="totalModifiedTest">0</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Контент</div>
-                        <div class="summary-value" id="totalModifiedContent">0</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">ВСЕГО</div>
-                        <div class="summary-value" id="totalModifiedTotal">0</div>
                     </div>
                 </div>
             </div>
@@ -2535,6 +2561,16 @@
             setText('totalBlocksBackend', blocksTotal.backend.toFixed(0));
             setText('totalBlocksTest', blocksTotal.test.toFixed(0));
             setText('totalBlocksTotal', blocksTotalSum.toFixed(0));
+            // Стоимость всех страниц (ставка ещё не известна — берём из DOM или дефолт)
+            const _rateEl = document.getElementById('hourlyRate');
+            const _rate = parseFloat(_rateEl?.value) || 2500;
+            const _fmt = (n) => Math.round(n * _rate).toLocaleString('ru-RU') + ' ₽';
+            setText('totalBlocksAnalyticsCost', _fmt(blocksTotal.analytics));
+            setText('totalBlocksDesignCost',    _fmt(blocksTotal.design));
+            setText('totalBlocksFrontendCost',  _fmt(blocksTotal.frontend));
+            setText('totalBlocksBackendCost',   _fmt(blocksTotal.backend));
+            setText('totalBlocksTestCost',      _fmt(blocksTotal.test));
+            setText('totalBlocksTotalCost',     _fmt(blocksTotalSum));
 
             // Calculate first two pages total
             const firstTwo = state.pages.slice(0, 2);
@@ -2551,7 +2587,18 @@
             setText('firstTwoPagesFrontend', ft.frontend.toFixed(0));
             setText('firstTwoPagesBackend', ft.backend.toFixed(0));
             setText('firstTwoPagesTest', ft.test.toFixed(0));
-            setText('firstTwoPagesTotal', (ft.analytics + ft.design + ft.frontend + ft.backend + ft.test).toFixed(0));
+            const ftTotal = ft.analytics + ft.design + ft.frontend + ft.backend + ft.test;
+            setText('firstTwoPagesTotal', ftTotal.toFixed(0));
+            // Стоимость первых двух страниц
+            const rateEl = document.getElementById('hourlyRate');
+            const rate = parseFloat(rateEl?.value) || 2500;
+            const fmtC = (n) => Math.round(n * rate).toLocaleString('ru-RU') + ' ₽';
+            setText('firstTwoPagesAnalyticsCost', fmtC(ft.analytics));
+            setText('firstTwoPagesDesignCost',    fmtC(ft.design));
+            setText('firstTwoPagesFrontendCost',  fmtC(ft.frontend));
+            setText('firstTwoPagesBackendCost',   fmtC(ft.backend));
+            setText('firstTwoPagesTestCost',      fmtC(ft.test));
+            setText('firstTwoPagesTotalCost',     fmtC(ftTotal));
 
             // 2. Calculate fixed works
             const fixedWorks = {
@@ -2630,6 +2677,19 @@
             if (dwInt('email'))   { fixedWorks.analytics += 1; fixedWorks.design += 1; fixedWorks.backend += 32; fixedWorks.test += 8; }
             if (dwInt('metrics')) { fixedWorks.frontend += 8; fixedWorks.backend += 1; fixedWorks.test += 0.2; }
             if (dwInt('chat'))    { fixedWorks.frontend += 16; fixedWorks.backend += 1; fixedWorks.test += 0.2; }
+
+            // Подитог интеграций (сумма часов по активным)
+            const intgHours =
+                (dwInt('crm')     ? 1+1+50+10       : 0) +
+                (dwInt('maps')    ? 1+1+16           : 0) +
+                (dwInt('b24')     ? 1+1+16+3.2       : 0) +
+                (dwInt('hh')      ? 2+2+24+4.8       : 0) +
+                (dwInt('email')   ? 1+1+32+8         : 0) +
+                (dwInt('metrics') ? 8+1+0.2          : 0) +
+                (dwInt('chat')    ? 16+1+0.2         : 0);
+            const _rateIntg = parseFloat(document.getElementById('hourlyRate')?.value) || 2500;
+            setText('sectionHoursIntegrations', Math.round(intgHours));
+            setText('sectionCostIntegrations', Math.round(intgHours * _rateIntg).toLocaleString('ru-RU') + ' ₽');
             // Кастомные интеграции из globalWorksSettings
             Object.keys(state.integrationsData || {}).forEach(key => {
                 if (key.startsWith('custom_') && state.integrations[key] && !dwInt(key)) return;
@@ -2658,6 +2718,41 @@
             fixedWorks.frontend  += contentTZ > 0 ? 8 : 0;
             fixedWorks.backend   += contentTZ > 0 ? 8 : 0;
             fixedWorks.test      += contentTZ > 0 ? 4 : 0;
+
+            // Fixed works subtotal + cost
+            const hourlyRateForFixed = parseFloat(document.getElementById('hourlyRate')?.value) || 2500;
+            const fixedSum = fixedWorks.analytics + fixedWorks.design + fixedWorks.frontend + fixedWorks.backend + fixedWorks.test + fixedWorks.content;
+            const fmtF = (n) => Math.round(n * hourlyRateForFixed).toLocaleString('ru-RU') + ' ₽';
+
+            // Подитоги по направлениям в заголовках секций
+            setText('sectionHoursAnalytics', Math.round(fixedWorks.analytics));
+            setText('sectionCostAnalytics',  fmtF(fixedWorks.analytics));
+            setText('sectionHoursDesign',    Math.round(fixedWorks.design));
+            setText('sectionCostDesign',     fmtF(fixedWorks.design));
+            setText('sectionHoursFrontend',  Math.round(fixedWorks.frontend));
+            setText('sectionCostFrontend',   fmtF(fixedWorks.frontend));
+            setText('sectionHoursBackend',   Math.round(fixedWorks.backend));
+            setText('sectionCostBackend',    fmtF(fixedWorks.backend));
+            setText('sectionHoursTesting',   Math.round(fixedWorks.test));
+            setText('sectionCostTesting',    fmtF(fixedWorks.test));
+            setText('sectionHoursContent',   Math.round(fixedWorks.content));
+            setText('sectionCostContent',    fmtF(fixedWorks.content));
+
+            // Итого по фикс. работам
+            setText('fixedAnalytics', Math.round(fixedWorks.analytics));
+            setText('fixedDesign',    Math.round(fixedWorks.design));
+            setText('fixedFrontend',  Math.round(fixedWorks.frontend));
+            setText('fixedBackend',   Math.round(fixedWorks.backend));
+            setText('fixedTest',      Math.round(fixedWorks.test));
+            setText('fixedContent',   Math.round(fixedWorks.content));
+            setText('fixedTotal',     Math.round(fixedSum));
+            setText('fixedAnalyticsCost', fmtF(fixedWorks.analytics));
+            setText('fixedDesignCost',    fmtF(fixedWorks.design));
+            setText('fixedFrontendCost',  fmtF(fixedWorks.frontend));
+            setText('fixedBackendCost',   fmtF(fixedWorks.backend));
+            setText('fixedTestCost',      fmtF(fixedWorks.test));
+            setText('fixedContentCost',   fmtF(fixedWorks.content));
+            setText('fixedTotalCost',     fmtF(fixedSum));
 
             // 3. Total with works
             const totalWithWorks = {
@@ -2706,6 +2801,14 @@
             setText('totalModifiedTest', totalModified.test.toFixed(0));
             setText('totalModifiedContent', totalModified.content.toFixed(0));
             setText('totalModifiedTotal', totalModifiedSum.toFixed(0));
+
+            // Подсказка в заголовке модификаторов
+            const modParts = [];
+            if (clientComplexity > 0) modParts.push(`сложность +${clientComplexity}%`);
+            if (internalGoals > 0)    modParts.push(`цели +${internalGoals}%`);
+            if (mvp > 0)              modParts.push(`MVP +${mvp}%`);
+            if (upsaleHours > 0)      modParts.push(`апсейл +${upsaleHours}ч`);
+            setText('modifierSummaryText', modParts.length ? modParts.join(' · ') : 'без модификаторов');
 
             // 5. Final project total
             setText('finalAnalytics', totalModified.analytics.toFixed(0));
@@ -4138,20 +4241,18 @@
         function addNewBlock(difficulty) {
             const nameInput = document.getElementById(`newBlockName-${difficulty}`);
             const name = nameInput.value.trim();
-            if (!name) {
-                alert('Введите название блока');
-                return;
-            }
-            blocks[difficulty].push({
-                name: name,
-                analytics: 0,
-                design: 0,
-                frontend: 0,
-                backend: 0,
-                test: 0
-            });
+            if (!name) { nameInput.focus(); nameInput.style.borderColor='#EF4444'; return; }
+            blocks[difficulty].push({ name, analytics: 0, design: 0, frontend: 0, backend: 0, test: 0 });
             nameInput.value = '';
+            nameInput.style.borderColor = '';
             renderAdminPanel();
+            // Сразу сохраняем в категорию чтобы блок появился в списке проекта
+            const catId = _adminCategoryId || state.categoryId;
+            if (catId) {
+                saveCategoryBlocks(catId, blocks).then(() => {
+                    if (catId === state.categoryId) renderBlocksList();
+                }).catch(e => console.error(e));
+            }
         }
 
         async function saveBlocksData() {
@@ -5367,29 +5468,20 @@
                 const pageBlocks = excelBlocks.map((eb, bi) => {
                     const key = eb.name.trim().toLowerCase();
                     const libBlock = allLibBlocks[key];
-                    if (libBlock) {
-                        return {
-                            id: Date.now() + i * 1000 + bi,
-                            name: libBlock.name,
-                            analytics: libBlock.analytics,
-                            design: libBlock.design,
-                            frontend: libBlock.frontend,
-                            backend: libBlock.backend,
-                            test: libBlock.test,
-                            difficulty: libBlock.difficulty
-                        };
-                    } else {
-                        return {
-                            id: Date.now() + i * 1000 + bi,
-                            name: eb.name,
-                            analytics: eb.analytics,
-                            design: eb.design,
-                            frontend: eb.frontend,
-                            backend: eb.backend,
-                            test: eb.test,
-                            difficulty: guessDifficulty(eb)
-                        };
-                    }
+                    const difficulty = libBlock ? libBlock.difficulty : guessDifficulty(eb);
+                    // Часы всегда из файла — библиотека только для определения сложности
+                    const hasHours = eb.analytics || eb.design || eb.frontend || eb.backend || eb.test;
+                    const src = (hasHours || !libBlock) ? eb : libBlock;
+                    return {
+                        id: Date.now() + i * 1000 + bi,
+                        name: eb.name,
+                        analytics: Math.round(src.analytics || 0),
+                        design:    Math.round(src.design    || 0),
+                        frontend:  Math.round(src.frontend  || 0),
+                        backend:   Math.round(src.backend   || 0),
+                        test:      Math.round(src.test      || 0),
+                        difficulty
+                    };
                 });
 
                 return { id: Date.now() + i, name: pageName, expanded: true, blocks: pageBlocks };
@@ -5399,10 +5491,7 @@
             state.integrations = { crm: false, maps: false, b24: false, hh: false, email: false, metrics: false, chat: false };
             currentProjectId = null;
 
-            renderPages();
-            calculateTotals();
-
-            isSaving = false; // сбрасываем на случай зависшего флага
+            isSaving = false;
             isSaving = true;
             setSaveBtn('loading');
             try {
@@ -5416,6 +5505,9 @@
                 renderProjectsList();
                 setSaveBtn('saved');
                 switchView('calculator');
+                renderPages();
+                renderFixedWorks();
+                requestAnimationFrame(() => calculateTotals());
                 showSuccess('Проект создан: ' + selectedIndices.length + ' страниц!');
             } catch (e) {
                 showError('Ошибка сохранения проекта.', e.message);
@@ -5645,7 +5737,7 @@
             const name = nameEl ? nameEl.value.trim() : '';
             if (!name) { if (nameEl) { nameEl.style.borderColor = '#EF4444'; nameEl.focus(); } return; }
             if (!_selectedCategoryId) { showError('Выберите категорию проекта.'); return; }
-            const catId = _selectedCategoryId; // сохраняем ДО закрытия модала
+            const catId = _selectedCategoryId;
             closeCategoryModal();
             await createNewProjectWithCategory(name, catId);
         }
