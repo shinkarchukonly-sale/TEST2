@@ -4922,11 +4922,7 @@
             }
         });
 
-        // Initialize app when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            // Floating add page button — показываем когда открыт калькулятор
+        // Floating add page button — показываем когда открыт калькулятор
         function updateFloatingBtn() {
             const btn = document.getElementById('floatingAddPage');
             if (!btn) return;
@@ -4935,7 +4931,11 @@
             btn.style.display = calcVisible ? 'flex' : 'none';
         }
 
-        init();
+        // Initialize app when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
         }
 
         // ═══════════════════════════════════════════════
