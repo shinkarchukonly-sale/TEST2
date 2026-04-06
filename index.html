@@ -1260,7 +1260,7 @@
 
             <!-- Pages Section -->
             <div class="section">
-                <div class="section-header" style="position:sticky;top:72px;z-index:90;background:#F8FAFC;padding:12px 0;margin:0 0 8px;border-bottom:1px solid #E2E8F0;">
+                <div class="section-header">
                     <h2 class="section-title">Страницы сайта</h2>
                     <button class="btn btn-primary" onclick="addPage()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1946,18 +1946,16 @@
 
         function deletePage(pageId) {
             if (state.pages.length <= 1) {
-                alert('Должна остаться хотя бы одна страница');
+                showError('Должна остаться хотя бы одна страница.');
                 return;
             }
-            if (confirm('Удалить страницу?')) {
-                const page = state.pages.find(p => p.id === pageId);
-                const label = 'Удалена страница' + (page ? ': ' + page.name : '');
-                state.pages = state.pages.filter(p => p.id !== pageId);
-                renderPages();
-                calculateTotals();
-                historyPush(label);
-                saveState();
-            }
+            const page = state.pages.find(p => p.id === pageId);
+            const label = 'Удалена страница' + (page ? ': ' + page.name : '');
+            state.pages = state.pages.filter(p => p.id !== pageId);
+            renderPages();
+            calculateTotals();
+            historyPush(label);
+            saveState();
         }
 
         function togglePage(pageId) {
@@ -4886,7 +4884,23 @@
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', init);
         } else {
-            init();
+            // Floating add page button
+        const _mainContent = document.querySelector('.main-content');
+        const _floatingBtn = document.getElementById('floatingAddPage');
+        if (_mainContent && _floatingBtn) {
+            _mainContent.addEventListener('scroll', () => {
+                const calcView = document.querySelector('.main-content');
+                const pagesHeader = document.querySelector('.section-header');
+                if (!pagesHeader) return;
+                const rect = pagesHeader.getBoundingClientRect();
+                const visible = document.getElementById('calcView') ? document.getElementById('calcView').style.display !== 'none' : true;
+                const show = visible && rect.bottom < 0;
+                _floatingBtn.style.opacity = show ? '1' : '0';
+                _floatingBtn.style.pointerEvents = show ? 'auto' : 'none';
+            });
+        }
+
+        init();
         }
 
         // ═══════════════════════════════════════════════
@@ -5730,7 +5744,7 @@
         let _historyLock = false; // чтобы restore не пушил новую запись
 
         function historyPush(label) {
-            if (_historyLock) return;
+            if (_historyLock || state._skipSave) return;
             const snapshot = JSON.parse(JSON.stringify(getStateSnapshot()));
             if (_historyIdx < _history.length - 1) {
                 _history = _history.slice(0, _historyIdx + 1);
@@ -5744,9 +5758,9 @@
         function historyRestore(idx) {
             if (idx < 0 || idx >= _history.length) return;
             _historyLock = true;
+            _historyIdx = idx;
+            const s = _history[idx].snapshot;
             try {
-                _historyIdx = idx;
-                const s = _history[idx].snapshot;
                 if (s.pages) state.pages = JSON.parse(JSON.stringify(s.pages));
                 if (s.percentages) Object.assign(state.percentages, s.percentages);
                 if (s.fixedValues)  Object.assign(state.fixedValues, s.fixedValues);
@@ -5761,13 +5775,16 @@
                 }
                 renderPages();
                 renderFixedWorks();
+            } catch(e) {
+                console.error('historyRestore error:', e);
+            } finally {
+                // Снимаем лок только после полного рендера
                 requestAnimationFrame(() => {
                     calculateTotals();
                     updateHistoryUI();
                     scheduleAutosave();
+                    _historyLock = false;
                 });
-            } finally {
-                _historyLock = false;
             }
         }
 
@@ -5858,6 +5875,17 @@
             </div>
         </div>
     </div>
+
+    <!-- Floating Add Page Button -->
+    <button id="floatingAddPage" onclick="addPage()" style="
+        display:none;position:fixed;bottom:32px;right:32px;
+        background:#3B82F6;color:#fff;border:none;border-radius:50px;
+        padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer;
+        box-shadow:0 4px 16px rgba(59,130,246,0.4);z-index:200;
+        display:flex;align-items:center;gap:8px;transition:opacity 0.2s;opacity:0;pointer-events:none;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Добавить страницу
+    </button>
 
     <!-- History Panel -->
     <div class="history-panel" id="historyPanel">
