@@ -1495,6 +1495,48 @@
                 </div>
             </div>
 
+            <!-- Total with works -->
+            <div class="summary-block">
+                <div class="summary-title">ИТОГО: ЧАСЫ С РАБОТАМИ</div>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-label">Аналитика</div>
+                        <div class="summary-value" id="totalWithWorksAnalytics">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalWithWorksAnalyticsCost">0 ₽</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Дизайн</div>
+                        <div class="summary-value" id="totalWithWorksDesign">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalWithWorksDesignCost">0 ₽</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Front-end</div>
+                        <div class="summary-value" id="totalWithWorksFrontend">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalWithWorksFrontendCost">0 ₽</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Back-end</div>
+                        <div class="summary-value" id="totalWithWorksBackend">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalWithWorksBackendCost">0 ₽</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Test</div>
+                        <div class="summary-value" id="totalWithWorksTest">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalWithWorksTestCost">0 ₽</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Контент</div>
+                        <div class="summary-value" id="totalWithWorksContent">0</div>
+                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalWithWorksContentCost">0 ₽</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">ВСЕГО</div>
+                        <div class="summary-value" id="totalWithWorksTotal">0</div>
+                        <div style="font-size:11px;color:#1E293B;margin-top:2px;font-weight:600;" id="totalWithWorksTotalCost">0 ₽</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Modifiers Section (collapsible) -->
             <div class="collapsible-section" style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;margin-bottom:16px;">
                 <div class="collapsible-header" onclick="toggleCollapsible(this)" style="padding:16px 20px;">
@@ -2598,11 +2640,12 @@
 
             // Analytics works — курирование и операционка от (блоки + фиксированные + кастомные)
             const analyticsFixedSum = dwFix('analyticsBenchmark') + dwFix('analyticsBrief') + dwFix('analyticsRequirements') + dwFix('analyticsStructure');
-            const analyticsBase     = blocksTotal.analytics + analyticsFixedSum + customA;
-            const analyticsCuration    = dwPct(analyticsBase, 'analyticsCuration');
-            const analyticsOperations  = dwPct(analyticsBase, 'analyticsOperations');
+            const analyticsBaseForPct = blocksTotal.analytics + analyticsFixedSum + customA;
+            const analyticsCuration    = dwPct(analyticsBaseForPct, 'analyticsCuration');
+            const analyticsOperations  = dwPct(analyticsBaseForPct, 'analyticsOperations');
             const analyticsPreparation = dwPct(blocksTotal.analytics + customA, 'analyticsPreparation');
-            fixedWorks.analytics = analyticsCuration + analyticsOperations + analyticsFixedSum + analyticsPreparation + customA;
+            // Итого: проценты + фикс + кастом (без двойного учёта)
+            fixedWorks.analytics = analyticsCuration + analyticsOperations + analyticsPreparation + analyticsFixedSum + customA;
             setText('analyticsCuration', analyticsCuration.toFixed(0));
             setText('analyticsOperations', analyticsOperations.toFixed(0));
             setText('analyticsPreparation', analyticsPreparation.toFixed(0));
@@ -2621,7 +2664,7 @@
             setText('designSupervision', designSupervision.toFixed(0));
 
             // Frontend works
-            const frontendFixedSum    = dwFix('frontendSetup') + dwFix('frontendPrototypes') + dwFix('frontendAnimMain') + dwFix('frontendAnimInner') + dwFix('backendMultilangFront') + dwFix('backendSearchFront');
+            const frontendFixedSum    = dwFix('frontendSetup') + dwFix('frontendPrototypes') + dwFix('frontendAnimMain') + dwFix('frontendAnimInner');
             const frontendBase        = blocksTotal.frontend + frontendFixedSum + customFE;
             const frontendIntegration = dwPct(frontendBase, 'frontendIntegration');
             const frontendBase2       = frontendBase + frontendIntegration;
@@ -2635,69 +2678,56 @@
             setText('frontendIntegration', frontendIntegration.toFixed(0));
 
             // Backend works
-            const backendFixedSum  = dwFix('backendSetup') + dwFix('backendMultilang') + dwFix('backendSearch');
-            const backendBase      = blocksTotal.backend + backendFixedSum + customBE + customI;
+            const backendFixedSum  = dwFix('backendSetup') + dwFix('backendMultilang') + dwFix('backendSearch') + dwFix('backendMultilangFront') + dwFix('backendSearchFront');
+            const backendBase      = blocksTotal.backend + backendFixedSum + customBE;
             const backendOperations = dwPct(backendBase, 'backendOperations');
             const backendReview     = dwPct(backendBase, 'backendReview');
             const backendBugs       = dwPct(backendBase, 'backendBugs');
-            fixedWorks.backend  = backendFixedSum + backendOperations + backendReview + backendBugs + customBE + customI;
+            fixedWorks.backend  = backendFixedSum + backendOperations + backendReview + backendBugs + customBE;
             setText('backendOperations', backendOperations.toFixed(0));
             setText('backendReview', backendReview.toFixed(0));
             setText('backendBugs', backendBugs.toFixed(0));
 
-            // Integrations
-            if (dwInt('crm'))     { fixedWorks.analytics += 1; fixedWorks.design += 1; fixedWorks.backend += 50; fixedWorks.test += 10; }
-            if (dwInt('maps'))    { fixedWorks.analytics += 1; fixedWorks.design += 1; fixedWorks.frontend += 16; }
-            if (dwInt('b24'))     { fixedWorks.analytics += 1; fixedWorks.design += 1; fixedWorks.backend += 16; fixedWorks.test += 3.2; }
-            if (dwInt('hh'))      { fixedWorks.analytics += 2; fixedWorks.design += 2; fixedWorks.backend += 24; fixedWorks.test += 4.8; }
-            if (dwInt('email'))   { fixedWorks.analytics += 1; fixedWorks.design += 1; fixedWorks.backend += 32; fixedWorks.test += 8; }
-            if (dwInt('metrics')) { fixedWorks.frontend += 8; fixedWorks.backend += 1; fixedWorks.test += 0.2; }
-            if (dwInt('chat'))    { fixedWorks.frontend += 16; fixedWorks.backend += 1; fixedWorks.test += 0.2; }
+            // Integrations — часы остаются только в секции интеграций
+            let intgHours = 0;
+            if (dwInt('crm'))     { intgHours += 62; }    // 1+1+50+10
+            if (dwInt('maps'))    { intgHours += 18; }    // 1+1+16
+            if (dwInt('b24'))     { intgHours += 21.2; }  // 1+1+16+3.2
+            if (dwInt('hh'))      { intgHours += 32.8; }  // 2+2+24+4.8
+            if (dwInt('email'))   { intgHours += 42; }    // 1+1+32+8
+            if (dwInt('metrics')) { intgHours += 9.2; }   // 8+1+0.2
+            if (dwInt('chat'))    { intgHours += 17.2; }  // 16+1+0.2
 
-            // Подитог интеграций (сумма часов по активным)
-            const intgHours =
-                (dwInt('crm')     ? 1+1+50+10       : 0) +
-                (dwInt('maps')    ? 1+1+16           : 0) +
-                (dwInt('b24')     ? 1+1+16+3.2       : 0) +
-                (dwInt('hh')      ? 2+2+24+4.8       : 0) +
-                (dwInt('email')   ? 1+1+32+8         : 0) +
-                (dwInt('metrics') ? 8+1+0.2          : 0) +
-                (dwInt('chat')    ? 16+1+0.2         : 0);
+            // Кастомные интеграции
+            Object.keys(state.integrationsData || {}).forEach(key => {
+                if (key.startsWith('custom_') && state.integrations[key]) {
+                    const intg = state.integrationsData[key];
+                    intgHours += (intg.analytics || 0) + (intg.design || 0) + (intg.frontend || 0) + (intg.backend || 0) + (intg.test || 0);
+                }
+            });
+
             const _rateIntg = parseFloat(document.getElementById('hourlyRate')?.value) || 2500;
             setText('sectionHoursIntegrations', Math.round(intgHours));
             setText('sectionCostIntegrations', Math.round(intgHours * _rateIntg).toLocaleString('ru-RU') + ' ₽');
-            // Кастомные интеграции из globalWorksSettings
-            Object.keys(state.integrationsData || {}).forEach(key => {
-                if (key.startsWith('custom_') && state.integrations[key] && !dwInt(key)) return;
-                if (key.startsWith('custom_') && state.integrations[key]) {
-                    const intg = state.integrationsData[key];
-                    fixedWorks.analytics += intg.analytics || 0;
-                    fixedWorks.design    += intg.design    || 0;
-                    fixedWorks.frontend  += intg.frontend  || 0;
-                    fixedWorks.backend   += intg.backend   || 0;
-                    fixedWorks.test      += intg.test      || 0;
-                }
-            });
 
             // Testing works
             const testingBase       = blocksTotal.test + customT;
             const testingOperations = dwPct(testingBase, 'testingOperations');
             const testingProd       = dwPct(testingBase, 'testingProd');
-            fixedWorks.test += testingOperations + testingProd + dwFix('testingArtifacts') + dwFix('testingPrototypes') + dwFix('testingDesign') + dwFix('testingPerformance') + dwFix('testingContent') + customT;
+            fixedWorks.test = testingOperations + testingProd + dwFix('testingArtifacts') + dwFix('testingPrototypes') + dwFix('testingDesign') + dwFix('testingPerformance') + dwFix('testingContent') + customT;
             setText('testingOperations', testingOperations.toFixed(0));
             setText('testingProd', testingProd.toFixed(0));
 
-            // Content works — ТЗ распределяется по направлениям
+            // Content works — всё остаётся в секции контента
             const contentTZ = dwFix('contentTZ');
             fixedWorks.content = dwFix('contentFill') + dwFix('contentInstruction') + contentTZ + customC;
-            fixedWorks.analytics += contentTZ > 0 ? 4 : 0;
-            fixedWorks.frontend  += contentTZ > 0 ? 8 : 0;
-            fixedWorks.backend   += contentTZ > 0 ? 8 : 0;
-            fixedWorks.test      += contentTZ > 0 ? 4 : 0;
+
+            // Integrations total
+            fixedWorks.integrations = intgHours;
 
             // Fixed works subtotal + cost
             const hourlyRateForFixed = parseFloat(document.getElementById('hourlyRate')?.value) || 2500;
-            const fixedSum = fixedWorks.analytics + fixedWorks.design + fixedWorks.frontend + fixedWorks.backend + fixedWorks.test + fixedWorks.content;
+            const fixedSum = fixedWorks.analytics + fixedWorks.design + fixedWorks.frontend + fixedWorks.backend + fixedWorks.test + fixedWorks.content + fixedWorks.integrations;
             const fmtF = (n) => Math.round(n * hourlyRateForFixed).toLocaleString('ru-RU') + ' ₽';
 
             // Подитоги по направлениям в заголовках секций
@@ -2737,10 +2767,11 @@
                 frontend: blocksTotal.frontend + fixedWorks.frontend,
                 backend: blocksTotal.backend + fixedWorks.backend,
                 test: blocksTotal.test + fixedWorks.test,
-                content: fixedWorks.content
+                content: fixedWorks.content,
+                integrations: fixedWorks.integrations
             };
 
-            const totalWithWorksSum = totalWithWorks.analytics + totalWithWorks.design + totalWithWorks.frontend + totalWithWorks.backend + totalWithWorks.test + totalWithWorks.content;
+            const totalWithWorksSum = totalWithWorks.analytics + totalWithWorks.design + totalWithWorks.frontend + totalWithWorks.backend + totalWithWorks.test + totalWithWorks.content + totalWithWorks.integrations;
 
             setText('totalWithWorksAnalytics', totalWithWorks.analytics.toFixed(0));
             setText('totalWithWorksDesign', totalWithWorks.design.toFixed(0));
@@ -2749,6 +2780,15 @@
             setText('totalWithWorksTest', totalWithWorks.test.toFixed(0));
             setText('totalWithWorksContent', totalWithWorks.content.toFixed(0));
             setText('totalWithWorksTotal', totalWithWorksSum.toFixed(0));
+            // Стоимость итого с работами
+            const fmtW = (n) => Math.round(n * hourlyRateForFixed).toLocaleString('ru-RU') + ' ₽';
+            setText('totalWithWorksAnalyticsCost', fmtW(totalWithWorks.analytics));
+            setText('totalWithWorksDesignCost', fmtW(totalWithWorks.design));
+            setText('totalWithWorksFrontendCost', fmtW(totalWithWorks.frontend));
+            setText('totalWithWorksBackendCost', fmtW(totalWithWorks.backend));
+            setText('totalWithWorksTestCost', fmtW(totalWithWorks.test));
+            setText('totalWithWorksContentCost', fmtW(totalWithWorks.content));
+            setText('totalWithWorksTotalCost', fmtW(totalWithWorksSum));
 
             // 4. Apply modifiers
             const upsaleEl = document.getElementById('upsaleHours');
@@ -2765,10 +2805,11 @@
                 frontend: totalWithWorks.frontend * percentageModifier,
                 backend: totalWithWorks.backend * percentageModifier,
                 test: totalWithWorks.test * percentageModifier,
-                content: totalWithWorks.content * percentageModifier
+                content: totalWithWorks.content * percentageModifier,
+                integrations: totalWithWorks.integrations * percentageModifier
             };
 
-            const totalModifiedSum = totalModified.analytics + totalModified.design + totalModified.frontend + totalModified.backend + totalModified.test + totalModified.content + upsaleHours;
+            const totalModifiedSum = totalModified.analytics + totalModified.design + totalModified.frontend + totalModified.backend + totalModified.test + totalModified.content + totalModified.integrations + upsaleHours;
 
             setText('totalModifiedAnalytics', totalModified.analytics.toFixed(0));
             setText('totalModifiedDesign', totalModified.design.toFixed(0));
@@ -3434,6 +3475,7 @@
                 navProj.classList.add('active');
                 loadProjects().then(() => renderProjectsList());
             }
+            updateFloatingBtn();
         }
 
         function formatDate(iso) {
@@ -4884,20 +4926,13 @@
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', init);
         } else {
-            // Floating add page button
-        const _mainContent = document.querySelector('.main-content');
-        const _floatingBtn = document.getElementById('floatingAddPage');
-        if (_mainContent && _floatingBtn) {
-            _mainContent.addEventListener('scroll', () => {
-                const calcView = document.querySelector('.main-content');
-                const pagesHeader = document.querySelector('.section-header');
-                if (!pagesHeader) return;
-                const rect = pagesHeader.getBoundingClientRect();
-                const visible = document.getElementById('calcView') ? document.getElementById('calcView').style.display !== 'none' : true;
-                const show = visible && rect.bottom < 0;
-                _floatingBtn.style.opacity = show ? '1' : '0';
-                _floatingBtn.style.pointerEvents = show ? 'auto' : 'none';
-            });
+            // Floating add page button — показываем когда открыт калькулятор
+        function updateFloatingBtn() {
+            const btn = document.getElementById('floatingAddPage');
+            if (!btn) return;
+            const calcVisible = document.querySelector('.main-content')?.style.display !== 'none'
+                && !!currentProjectId;
+            btn.style.display = calcVisible ? 'flex' : 'none';
         }
 
         init();
@@ -5878,11 +5913,11 @@
 
     <!-- Floating Add Page Button -->
     <button id="floatingAddPage" onclick="addPage()" style="
-        display:none;position:fixed;bottom:32px;right:32px;
+        position:fixed;bottom:32px;right:32px;
         background:#3B82F6;color:#fff;border:none;border-radius:50px;
         padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer;
         box-shadow:0 4px 16px rgba(59,130,246,0.4);z-index:200;
-        display:flex;align-items:center;gap:8px;transition:opacity 0.2s;opacity:0;pointer-events:none;">
+        display:none;align-items:center;gap:8px;">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Добавить страницу
     </button>
