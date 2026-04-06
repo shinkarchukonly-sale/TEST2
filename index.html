@@ -405,6 +405,11 @@
             display: inline-block;
         }
 
+        .badge-new {
+            background: #F3E8FF;
+            color: #7C3AED;
+        }
+
         .badge-easy {
             background: #DCFCE7;
             color: #166534;
@@ -862,6 +867,11 @@
             border-radius: 8px;
         }
 
+        .admin-section-title.new {
+            background: #F3E8FF;
+            color: #6D28D9;
+        }
+
         .admin-section-title.easy {
             background: #DCFCE7;
             color: #166534;
@@ -1250,7 +1260,7 @@
 
             <!-- Pages Section -->
             <div class="section">
-                <div class="section-header">
+                <div class="section-header" style="position:sticky;top:72px;z-index:90;background:#F8FAFC;padding:12px 0;margin:0 0 8px;border-bottom:1px solid #E2E8F0;">
                     <h2 class="section-title">Страницы сайта</h2>
                     <button class="btn btn-primary" onclick="addPage()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1481,41 +1491,6 @@
                         <div class="summary-label">ВСЕГО</div>
                         <div class="summary-value" id="fixedTotal">0</div>
                         <div style="font-size:11px;color:#8B5CF6;margin-top:2px;font-weight:600;" id="fixedTotalCost">0 ₽</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Total with works -->
-            <div class="summary-block">
-                <div class="summary-title">ИТОГО: ЧАСЫ С РАБОТАМИ</div>
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <div class="summary-label">Аналитика</div>
-                        <div class="summary-value" id="totalWithWorksAnalytics">0</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Дизайн</div>
-                        <div class="summary-value" id="totalWithWorksDesign">0</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Front-end</div>
-                        <div class="summary-value" id="totalWithWorksFrontend">0</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Back-end</div>
-                        <div class="summary-value" id="totalWithWorksBackend">0</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Test</div>
-                        <div class="summary-value" id="totalWithWorksTest">0</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Контент</div>
-                        <div class="summary-value" id="totalWithWorksContent">0</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">ВСЕГО</div>
-                        <div class="summary-value" id="totalWithWorksTotal">0</div>
                     </div>
                 </div>
             </div>
@@ -2021,10 +1996,13 @@
             
             let html = '';
             
-            ['easy', 'medium', 'hard'].forEach(difficulty => {
-                const difficultyName = difficulty === 'easy' ? 'ЛЕГКИЕ' : difficulty === 'medium' ? 'СРЕДНИЕ' : 'СЛОЖНЫЕ';
-                const badgeClass = difficulty === 'easy' ? 'badge-easy' : difficulty === 'medium' ? 'badge-medium' : 'badge-hard';
-                const badgeText = difficulty === 'easy' ? 'Легкий' : difficulty === 'medium' ? 'Средний' : 'Сложный';
+            const allDifficulties = blocks['new']?.length ? ['new', 'easy', 'medium', 'hard'] : ['easy', 'medium', 'hard'];
+
+            allDifficulties.forEach(difficulty => {
+                if (!blocks[difficulty]) return;
+                const difficultyName = difficulty === 'new' ? 'НОВЫЕ' : difficulty === 'easy' ? 'ЛЕГКИЕ' : difficulty === 'medium' ? 'СРЕДНИЕ' : 'СЛОЖНЫЕ';
+                const badgeClass = difficulty === 'new' ? 'badge-new' : difficulty === 'easy' ? 'badge-easy' : difficulty === 'medium' ? 'badge-medium' : 'badge-hard';
+                const badgeText = difficulty === 'new' ? 'Новый' : difficulty === 'easy' ? 'Легкий' : difficulty === 'medium' ? 'Средний' : 'Сложный';
                 
                 const filteredBlocks = blocks[difficulty].filter(b => 
                     b.name.toLowerCase().includes(search)
@@ -4136,14 +4114,19 @@
         function renderAdminPanel() {
             const container = document.getElementById('adminBody');
             const difficultyLabels = {
-                easy: 'Лёгкие блоки',
+                new:    'Новые блоки',
+                easy:   'Лёгкие блоки',
                 medium: 'Средние блоки',
-                hard: 'Сложные блоки'
+                hard:   'Сложные блоки'
             };
 
             let html = '';
 
-            ['easy', 'medium', 'hard'].forEach(difficulty => {
+            // Показываем секцию 'new' только если есть блоки
+            const sections = blocks['new']?.length ? ['new', 'easy', 'medium', 'hard'] : ['easy', 'medium', 'hard'];
+
+            sections.forEach(difficulty => {
+                if (!blocks[difficulty]) blocks[difficulty] = [];
                 html += `
                     <div class="admin-section">
                         <div class="admin-section-title ${difficulty}">${difficultyLabels[difficulty]}</div>
@@ -4242,11 +4225,11 @@
             const nameInput = document.getElementById(`newBlockName-${difficulty}`);
             const name = nameInput.value.trim();
             if (!name) { nameInput.focus(); nameInput.style.borderColor='#EF4444'; return; }
-            blocks[difficulty].push({ name, analytics: 0, design: 0, frontend: 0, backend: 0, test: 0 });
+            if (!blocks['new']) blocks['new'] = [];
+            blocks['new'].push({ name, analytics: 0, design: 0, frontend: 0, backend: 0, test: 0 });
             nameInput.value = '';
             nameInput.style.borderColor = '';
             renderAdminPanel();
-            // Сразу сохраняем в категорию чтобы блок появился в списке проекта
             const catId = _adminCategoryId || state.categoryId;
             if (catId) {
                 saveCategoryBlocks(catId, blocks).then(() => {
