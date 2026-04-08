@@ -3604,195 +3604,362 @@
 
         // Export functions
         function exportToExcel() {
-            // Гарантируем актуальные расчёты
             calculateTotals();
 
-            // Читаем значения из DOM — они идентичны тому что видит пользователь
-            const getN = (id) => parseInt(document.getElementById(id)?.textContent || '0') || 0;
+            const rate      = parseFloat(document.getElementById('hourlyRate')?.value) || 2500;
+            const projName  = currentProjectId ? (projects.find(p=>p.id===currentProjectId)?.name || 'Проект') : 'Проект';
+            const dw        = state.disabledWorks || { percentages: [], fixed: [], integrations: [] };
+            const dwPct     = (base, key) => dw.percentages.includes(key) ? 0 : base * ((state.percentages[key] || 0) / 100);
+            const dwFix     = (key) => dw.fixed.includes(key) ? 0 : (state.fixedValues[key] || 0);
+            const dwInt     = (key) => dw.integrations.includes(key) ? false : state.integrations[key];
+            const rnd       = (n) => Math.round(n) || 0;
+            const cost      = (n) => Math.round(n * rate) || 0;
 
-            const dw = state.disabledWorks || { percentages: [], fixed: [], integrations: [] };
-            const dwFix = (key) => dw.fixed.includes(key) ? 0 : Math.round(state.fixedValues[key] || 0);
+            // ── Кастомные работы ──────────────────────────────────────────────────
+            const customA   = state.customWorks?.analytics    || [];
+            const customD   = state.customWorks?.design       || [];
+            const customFE  = state.customWorks?.frontend     || [];
+            const customBE  = state.customWorks?.backend      || [];
+            const customT   = state.customWorks?.testing      || [];
+            const customC   = state.customWorks?.content      || [];
+            const customAH  = customA.reduce((s,w)=>s+w.hours,0);
+            const customDH  = customD.reduce((s,w)=>s+w.hours,0);
+            const customFEH = customFE.reduce((s,w)=>s+w.hours,0);
+            const customBEH = customBE.reduce((s,w)=>s+w.hours,0);
+            const customTH  = customT.reduce((s,w)=>s+w.hours,0);
+            const customCH  = customC.reduce((s,w)=>s+w.hours,0);
 
-            // Блоки по страницам (first two / rest)
-            const firstTwo  = state.pages.slice(0, 2);
-            const restPages = state.pages.slice(2);
-            const ft = { analytics: 0, design: 0, frontend: 0, backend: 0, test: 0 };
-            const rt = { analytics: 0, design: 0, frontend: 0, backend: 0, test: 0 };
-            firstTwo.forEach(p => p.blocks.forEach(b => { ft.analytics+=b.analytics; ft.design+=b.design; ft.frontend+=b.frontend; ft.backend+=b.backend; ft.test+=b.test; }));
-            restPages.forEach(p => p.blocks.forEach(b => { rt.analytics+=b.analytics; rt.design+=b.design; rt.frontend+=b.frontend; rt.backend+=b.backend; rt.test+=b.test; }));
+            // ── Суммы блоков ─────────────────────────────────────────────────────
+            const blocksTotal = { analytics:0, design:0, frontend:0, backend:0, test:0 };
+            state.pages.forEach(p => p.blocks.forEach(b => {
+                blocksTotal.analytics += b.analytics;
+                blocksTotal.design    += b.design;
+                blocksTotal.frontend  += b.frontend;
+                blocksTotal.backend   += b.backend;
+                blocksTotal.test      += b.test;
+            }));
+            const btSum = blocksTotal.analytics + blocksTotal.design + blocksTotal.frontend + blocksTotal.backend + blocksTotal.test;
 
-            // Процентные работы — из DOM
-            const aCuration   = getN('analyticsCuration');
-            const aOps        = getN('analyticsOperations');
-            const aPrep       = getN('analyticsPreparation');
-            const aReview     = aCuration + aOps + aPrep;
+            // ── Пересчёт работ (идентично calculateTotals) ────────────────────
+            const analyticsFixedSum   = dwFix('analyticsBenchmark') + dwFix('analyticsBrief') + dwFix('analyticsRequirements') + dwFix('analyticsStructure');
+            const analyticsBaseForPct = blocksTotal.analytics + analyticsFixedSum + customAH;
+            const analyticsCuration   = dwPct(analyticsBaseForPct, 'analyticsCuration');
+            const analyticsOperations = dwPct(analyticsBaseForPct, 'analyticsOperations');
+            const analyticsPrep       = dwPct(blocksTotal.analytics + customAH, 'analyticsPreparation');
 
-            const dOps        = getN('designOperations');
-            const dUsed       = getN('designUsedBlocks');
-            const dUIKit      = getN('designUIKit');
-            const dSup        = getN('designSupervision');
-            const dReview     = dOps + dUsed;
+            const designUIKit      = dwPct(blocksTotal.design, 'designUIKit');
+            const designUsedBlocks = dwPct(blocksTotal.design, 'designUsedBlocks');
+            const designFixedSum   = dwFix('designAnimMain') + dwFix('designAnimInner') + dwFix('designAdaptMain') + dwFix('designAdaptAll') + dwFix('designUIKitMain');
+            const designBase       = blocksTotal.design + designFixedSum + designUIKit + designUsedBlocks + customDH;
+            const designOperations = dwPct(designBase, 'designOperations');
+            const designSupervision = dwPct(designBase + designOperations, 'designSupervision');
 
-            const feProtos    = dwFix('frontendPrototypes');
-            const feOps       = getN('frontendOperations');
-            const feReview    = getN('frontendReview');
-            const feBugs      = getN('frontendBugs');
-            const feIntg      = getN('frontendIntegration');
-            const feRevTotal  = feProtos + feOps + feReview + feBugs;
+            const frontendFixedSum   = dwFix('frontendSetup') + dwFix('frontendPrototypes') + dwFix('frontendAnimMain') + dwFix('frontendAnimInner');
+            const frontendBase       = blocksTotal.frontend + frontendFixedSum + customFEH;
+            const frontendInteg      = dwPct(frontendBase, 'frontendIntegration');
+            const frontendBase2      = frontendBase + frontendInteg;
+            const frontendOps        = dwPct(frontendBase2, 'frontendOperations');
+            const frontendReview     = dwPct(frontendBase2, 'frontendReview');
+            const frontendBugs       = dwPct(frontendBase2, 'frontendBugs');
 
-            const beOps       = getN('backendOperations');
-            const beReview    = getN('backendReview');
-            const beBugs      = getN('backendBugs');
-            const beRevTotal  = beOps + beReview + beBugs;
+            const backendFixedSum    = dwFix('backendSetup') + dwFix('backendMultilang') + dwFix('backendSearch') + dwFix('backendMultilangFront') + dwFix('backendSearchFront');
+            const backendBase        = blocksTotal.backend + backendFixedSum + customBEH;
+            const backendOps         = dwPct(backendBase, 'backendOperations');
+            const backendReview      = dwPct(backendBase, 'backendReview');
+            const backendBugs        = dwPct(backendBase, 'backendBugs');
 
-            const tOps        = getN('testingOperations');
-            const tProd       = getN('testingProd');
+            const testingBase     = blocksTotal.test + customTH;
+            const testingOps      = dwPct(testingBase, 'testingOperations');
+            const testingProd     = dwPct(testingBase, 'testingProd');
+            const contentTZ       = dwFix('contentTZ');
 
-            // Кастомные работы
-            const customA  = (state.customWorks?.analytics    || []);
-            const customD  = (state.customWorks?.design       || []);
-            const customFE = (state.customWorks?.frontend     || []);
-            const customBE = (state.customWorks?.backend      || []);
-            const customT  = (state.customWorks?.testing      || []);
-            const customC  = (state.customWorks?.content      || []);
+            // Интеграции
+            const intgMap = [
+                ['CRM-система',          'crm',     62],
+                ['Карты',                'maps',    18],
+                ['Битрикс24',            'b24',     21.2],
+                ['HeadHunter',           'hh',      32.8],
+                ['Email-рассылки',       'email',   42],
+                ['Системы аналитики',    'metrics', 9.2],
+                ['Онлайн-чат',           'chat',    17.2],
+            ];
+            let intgHours = 0;
+            intgMap.forEach(([,key,h]) => { if (dwInt(key)) intgHours += h; });
+            const customIntgItems = [];
+            Object.keys(state.integrationsData || {}).forEach(key => {
+                if (key.startsWith('custom_') && state.integrations[key]) {
+                    const intg = state.integrationsData[key];
+                    const h = (intg.analytics||0)+(intg.design||0)+(intg.frontend||0)+(intg.backend||0)+(intg.test||0);
+                    if (h > 0) { customIntgItems.push([intg.name || key, h]); intgHours += h; }
+                }
+            });
 
-            // Исполнители
-            const assignees = {
-                analytics: 'Аналитик', design: 'Дизайнер',
-                frontend: 'Frontend-разработчик', backend: 'Backend-разработчик',
-                testing: 'Тестировщик', content: 'Контент-менеджер', client: 'Клиент'
+            // Модификаторы
+            const clientComplexity = parseFloat(document.querySelector('input[name="clientComplexity"]:checked')?.value) || 0;
+            const internalGoals    = parseFloat(document.querySelector('input[name="internalGoals"]:checked')?.value)    || 0;
+            const mvp              = parseFloat(document.querySelector('input[name="mvp"]:checked')?.value)              || 0;
+            const upsaleHours      = parseFloat(document.getElementById('upsaleHours')?.value) || 0;
+            const modifier         = 1 + (clientComplexity + internalGoals + mvp) / 100;
+
+            // ── Построение листа ─────────────────────────────────────────────────
+            const rows = [];   // массив строк [ячейка, ...]
+            const meta = [];   // { row, col, bold, bg, color, border, align, numFmt }
+
+            let R = 0; // текущий индекс строки
+
+            const push = (cells, style) => {
+                rows.push(cells);
+                if (style) meta.push({ row: R, ...style });
+                R++;
             };
+            const empty = () => { rows.push([]); R++; };
 
-            const rows = [];
-            // rz — выводит только если часы > 0
-            const rz = (wbs, name, hours, assignee='') => {
-                if (hours <= 0) return;
-                rows.push([wbs, name||'', Math.round(hours), assignee]);
-            };
-            // rzf — фиксированная работа: если в disabledWorks.fixed или часы 0 — пропускаем
-            const rzf = (wbs, name, key, assignee='') => {
-                if (dw.fixed.includes(key)) return;
-                const h = Math.round(state.fixedValues[key] || 0);
-                if (h <= 0) return;
-                rows.push([wbs, name||'', h, assignee]);
-            };
-            // g — группа (всегда выводится, GanttPRO требует родителя)
-            const g = (wbs, name) => {
-                rows.push([wbs, name||'', '00', '']);
-            };
+            const COLS = 9; // A..I
+            const HDR_COLS  = ['Страница', 'Блок', 'Аналитика', 'Дизайн', 'Front-end', 'Back-end', 'Тест', 'Итого, ч', 'Стоимость, ₽'];
+            const WORK_COLS = ['Раздел', 'Работа', '', '', '', '', '', 'Итого, ч', 'Стоимость, ₽'];
 
-            // Корневой элемент обязателен для GanttPRO
-            const projName = currentProjectId ? (projects.find(p=>p.id===currentProjectId)?.name || 'Проект') : 'Проект';
-            rows.push(['1', projName, '00', '']);
+            // ─── ШАПКА проекта ───────────────────────────────────────────────────
+            push([projName, '', '', '', '', '', '', '', ''], { bold:true, bg:'1E3A5F', color:'FFFFFF', span:[0,8] });
+            push(['Дата:', new Date().toLocaleDateString('ru-RU'), '', 'Ставка:', rate + ' ₽/ч', '', '', '', ''], { bg:'EBF2FF' });
+            empty();
 
-            // Хелпер: секция с автонумерацией
-            // add(prefix, name, hours, assignee) — добавляет строку и инкрементирует счётчик
-            function addSection(prefix, sectionName, items) {
-                rows.push([prefix, sectionName, '00', '']);
-                let idx = 1;
-                items.forEach(([name, hours, assignee]) => {
-                    if (hours === '00') {
-                        rows.push([`${prefix}.${idx++}`, name, '00', assignee]);
-                    } else if (hours > 0) {
-                        rows.push([`${prefix}.${idx++}`, name, Math.round(hours), assignee]);
-                    }
-                    // hours <= 0 — пропускаем, idx не инкрементируем
+            // ═══════════════════════════════════════════════════════════════════
+            // РАЗДЕЛ 1 — СТРАНИЦЫ И БЛОКИ
+            // ═══════════════════════════════════════════════════════════════════
+            push(['РАЗДЕЛ 1 — СТРАНИЦЫ И БЛОКИ', '', '', '', '', '', '', '', ''], { bold:true, bg:'1E3A5F', color:'FFFFFF', span:[0,8] });
+            push(HDR_COLS, { bold:true, bg:'2563EB', color:'FFFFFF' });
+
+            let grandTotPg = { analytics:0, design:0, frontend:0, backend:0, test:0 };
+
+            state.pages.forEach((page, pIdx) => {
+                const pageTot = { analytics:0, design:0, frontend:0, backend:0, test:0 };
+                const blocks  = page.blocks || [];
+
+                // Строки блоков
+                blocks.forEach(b => {
+                    const bSum = b.analytics + b.design + b.frontend + b.backend + b.test;
+                    push([
+                        pIdx === 0 ? page.name : (blocks.indexOf(b) === 0 ? page.name : ''),
+                        b.name,
+                        rnd(b.analytics), rnd(b.design), rnd(b.frontend), rnd(b.backend), rnd(b.test),
+                        rnd(bSum), cost(bSum)
+                    ], { bg: pIdx % 2 === 0 ? 'FFFFFF' : 'F8FAFC' });
+                    pageTot.analytics += b.analytics; pageTot.design   += b.design;
+                    pageTot.frontend  += b.frontend;  pageTot.backend  += b.backend;
+                    pageTot.test      += b.test;
                 });
-            }
 
-            const skip = -1; // маркер "пропустить строку"
+                grandTotPg.analytics += pageTot.analytics; grandTotPg.design   += pageTot.design;
+                grandTotPg.frontend  += pageTot.frontend;  grandTotPg.backend  += pageTot.backend;
+                grandTotPg.test      += pageTot.test;
+            });
 
-            const cTZ = dwFix('contentTZ');
+            // ИТОГО все страницы
+            push([
+                'ИТОГО ПО ВСЕМ СТРАНИЦАМ', '',
+                rnd(grandTotPg.analytics), rnd(grandTotPg.design), rnd(grandTotPg.frontend),
+                rnd(grandTotPg.backend),   rnd(grandTotPg.test),
+                rnd(btSum), cost(btSum)
+            ], { bold:true, bg:'1E3A5F', color:'FFFFFF' });
 
-            addSection('1.1', 'Предпроектная аналитика', [
-                ['Анализ конкурентного окружения',   dw.fixed.includes('analyticsBenchmark')  ? skip : dwFix('analyticsBenchmark'),  assignees.analytics],
-                ['Подготовка брифа и интервьюирование', dw.fixed.includes('analyticsBrief')   ? skip : dwFix('analyticsBrief'),      assignees.analytics],
-                ['Составление бизнес требований',    dw.fixed.includes('analyticsRequirements')? skip: dwFix('analyticsRequirements'),assignees.analytics],
-                ['Составление структуры',            dw.fixed.includes('analyticsStructure')  ? skip : dwFix('analyticsStructure'),  assignees.analytics],
-                ['Ревью и правки',                   aReview,                                                                        assignees.analytics],
-                ...(cTZ > 0 ? [['Участие в написании ТЗ', 4, assignees.analytics]] : []),
-                ...customA.map(w => [w.name, w.hours, assignees.analytics]),
-                ['Согласование аналитики',           '00',                                                                           assignees.client],
+            empty(); empty();
+
+            // ═══════════════════════════════════════════════════════════════════
+            // РАЗДЕЛ 2 — ПЕРЕЧЕНЬ РАБОТ
+            // ═══════════════════════════════════════════════════════════════════
+            push(['РАЗДЕЛ 2 — ПЕРЕЧЕНЬ РАБОТ', '', '', '', '', '', '', '', ''], { bold:true, bg:'1E3A5F', color:'FFFFFF', span:[0,8] });
+            push(WORK_COLS, { bold:true, bg:'2563EB', color:'FFFFFF' });
+
+            let grandTotWorks = 0;
+
+            const pushWorkSection = (sectionName, items) => {
+                // items: [name, hours] — пустые пропускаем
+                const filtered = items.filter(([,h]) => h > 0);
+                if (!filtered.length) return 0;
+                const secTotal = filtered.reduce((s,[,h])=>s+h,0);
+                // Заголовок секции
+                push([sectionName,'','','','','','', rnd(secTotal), cost(secTotal)],
+                    { bold:true, bg:'EFF6FF' });
+                filtered.forEach(([name, hours]) => {
+                    push(['', name,'','','','','', rnd(hours), cost(hours)],
+                        { bg:'FFFFFF' });
+                });
+                grandTotWorks += secTotal;
+                return secTotal;
+            };
+
+            // 1. Аналитика (предпроектная + проектирование)
+            const ft2 = { analytics:0, design:0, frontend:0, backend:0, test:0 };
+            const rt2 = { analytics:0, design:0, frontend:0, backend:0, test:0 };
+            state.pages.slice(0,2).forEach(p=>p.blocks.forEach(b=>{ft2.analytics+=b.analytics;ft2.design+=b.design;ft2.frontend+=b.frontend;ft2.backend+=b.backend;ft2.test+=b.test;}));
+            state.pages.slice(2).forEach(p=>p.blocks.forEach(b=>{rt2.analytics+=b.analytics;rt2.design+=b.design;rt2.frontend+=b.frontend;rt2.backend+=b.backend;rt2.test+=b.test;}));
+
+            pushWorkSection('Аналитика', [
+                ['Анализ конкурентного окружения',           dwFix('analyticsBenchmark')],
+                ['Подготовка брифа и интервьюирование',      dwFix('analyticsBrief')],
+                ['Составление бизнес-требований',            dwFix('analyticsRequirements')],
+                ['Составление структуры',                    dwFix('analyticsStructure')],
+                ['Курирование',                              analyticsCuration],
+                ['Операционка',                              analyticsOperations],
+                ['Подготовка',                               analyticsPrep],
+                ...(contentTZ > 0 ? [['Участие в написании ТЗ', 4]] : []),
+                ...customA.map(w=>[w.name, w.hours]),
             ]);
 
-            addSection('1.2', 'Проектирование', [
-                ['Прототип главной и одной внутренней', ft.analytics,  assignees.analytics],
-                ['Прототип внутренних страниц',         rt.analytics,  assignees.analytics],
-                ['Согласование прототипов',             '00',          assignees.client],
+            pushWorkSection('Проектирование (прототипы)', [
+                ['Прототип главной и одной внутренней',  ft2.analytics],
+                ['Прототип внутренних страниц',          rt2.analytics],
             ]);
 
-            addSection('1.3', 'Дизайн', [
-                ['Дизайн главной и одной внутренней',   ft.design,                                                                    assignees.design],
-                ['Дизайн внутренних страниц',           rt.design,                                                                    assignees.design],
-                ['Анимации главной',                    dw.fixed.includes('designAnimMain')   ? skip : dwFix('designAnimMain'),       assignees.design],
-                ['Анимации внутренних',                 dw.fixed.includes('designAnimInner')  ? skip : dwFix('designAnimInner'),      assignees.design],
-                ['Адаптивы (главная и 1 внутренняя)',   dw.fixed.includes('designAdaptMain')  ? skip : dwFix('designAdaptMain'),      assignees.design],
-                ['Адаптивы всех страниц',               dw.fixed.includes('designAdaptAll')   ? skip : dwFix('designAdaptAll'),       assignees.design],
-                ['UI-kit (главная и 1 внутренняя)',     dw.fixed.includes('designUIKitMain')  ? skip : dwFix('designUIKitMain'),      assignees.design],
-                ['UI-kit (общий)',                      dw.percentages.includes('designUIKit')? skip : dUIKit,                        assignees.design],
-                ['Авторский надзор',                    dw.percentages.includes('designSupervision') ? skip : dSup,                  assignees.design],
-                ['Ревью и правки',                      dReview,                                                                      assignees.design],
-                ...customD.map(w => [w.name, w.hours, assignees.design]),
-                ['Согласование дизайна',                '00',                                                                         assignees.client],
+            pushWorkSection('Дизайн', [
+                ['Дизайн главной и одной внутренней',    ft2.design],
+                ['Дизайн внутренних страниц',            rt2.design],
+                ['Анимации главной',                     dwFix('designAnimMain')],
+                ['Анимации внутренних',                  dwFix('designAnimInner')],
+                ['Адаптивы (главная и 1 внутренняя)',    dwFix('designAdaptMain')],
+                ['Адаптивы всех страниц',                dwFix('designAdaptAll')],
+                ['UI-kit (главная и 1 внутренняя)',      dwFix('designUIKitMain')],
+                ['UI-kit (общий)',                       designUIKit],
+                ['Повторные блоки',                      designUsedBlocks],
+                ['Авторский надзор',                     designSupervision],
+                ['Операционка',                          designOperations],
+                ...customD.map(w=>[w.name, w.hours]),
             ]);
 
-            addSection('1.4', 'Front-end', [
-                ['Front-end главной и одной внутренней', ft.frontend,                                                                  assignees.frontend],
-                ['Front-end внутренних страниц',         rt.frontend,                                                                  assignees.frontend],
-                ['Разворачивание проекта',               dw.fixed.includes('frontendSetup')    ? skip : dwFix('frontendSetup'),       assignees.frontend],
-                ['Анимации главной',                     dw.fixed.includes('frontendAnimMain') ? skip : dwFix('frontendAnimMain'),    assignees.frontend],
-                ['Анимации внутренних',                  dw.fixed.includes('frontendAnimInner')? skip : dwFix('frontendAnimInner'),   assignees.frontend],
-                ['Интеграции front и back',              dw.percentages.includes('frontendIntegration') ? skip : feIntg,              assignees.frontend],
-                ['Ревью и правки',                       feRevTotal,                                                                   assignees.frontend],
-                ...(cTZ > 0 ? [['Участие в написании ТЗ', 8, assignees.frontend]] : []),
-                ...customFE.map(w => [w.name, w.hours, assignees.frontend]),
+            pushWorkSection('Front-end', [
+                ['Front-end главной и одной внутренней', ft2.frontend],
+                ['Front-end внутренних страниц',         rt2.frontend],
+                ['Разворачивание проекта',               dwFix('frontendSetup')],
+                ['Прототипы',                            dwFix('frontendPrototypes')],
+                ['Анимации главной',                     dwFix('frontendAnimMain')],
+                ['Анимации внутренних',                  dwFix('frontendAnimInner')],
+                ['Интеграции front и back',              frontendInteg],
+                ['Операционка',                          frontendOps],
+                ['Ревью и правки',                       frontendReview],
+                ['Правки после тестирования',            frontendBugs],
+                ...(contentTZ > 0 ? [['Участие в написании ТЗ', 8]] : []),
+                ...customFE.map(w=>[w.name, w.hours]),
             ]);
 
-            addSection('1.5', 'Back-end', [
-                ['Back-end главной и одной внутренней',  ft.backend,                                                                   assignees.backend],
-                ['Back-end внутренних страниц',          rt.backend,                                                                   assignees.backend],
-                ['Разворачивание проекта',               dw.fixed.includes('backendSetup')     ? skip : dwFix('backendSetup'),        assignees.backend],
-                ['Мультиязычность',                      dw.fixed.includes('backendMultilang') ? skip : dwFix('backendMultilang') + dwFix('backendMultilangFront'), assignees.backend],
-                ['Базовый поиск',                        dw.fixed.includes('backendSearch')    ? skip : dwFix('backendSearch') + dwFix('backendSearchFront'),       assignees.backend],
-                ['Ревью и правки',                       beRevTotal,                                                                   assignees.backend],
-                ...(cTZ > 0 ? [['Участие в написании ТЗ', 8, assignees.backend]] : []),
-                ...customBE.map(w => [w.name, w.hours, assignees.backend]),
-                ['Согласование разработки',              '00',                                                                         assignees.client],
+            pushWorkSection('Back-end', [
+                ['Back-end главной и одной внутренней',  ft2.backend],
+                ['Back-end внутренних страниц',          rt2.backend],
+                ['Разворачивание проекта',               dwFix('backendSetup')],
+                ['Мультиязычность',                      dwFix('backendMultilang') + dwFix('backendMultilangFront')],
+                ['Базовый поиск',                        dwFix('backendSearch')    + dwFix('backendSearchFront')],
+                ['Операционка',                          backendOps],
+                ['Ревью и правки',                       backendReview],
+                ['Правки после тестирования',            backendBugs],
+                ...(contentTZ > 0 ? [['Участие в написании ТЗ', 8]] : []),
+                ...customBE.map(w=>[w.name, w.hours]),
             ]);
 
-            addSection('1.6', 'Тестирование', [
-                ['Тестирование главной и одной внутренней', ft.test,                                                                   assignees.testing],
-                ['Тестирование внутренних страниц',         rt.test,                                                                   assignees.testing],
-                ['Операционка',                             dw.percentages.includes('testingOperations') ? skip : tOps,              assignees.testing],
-                ['Тестирование на проде',                   dw.percentages.includes('testingProd')       ? skip : tProd,             assignees.testing],
-                ['Отсмотр артефактов',                      dw.fixed.includes('testingArtifacts')   ? skip : dwFix('testingArtifacts'),   assignees.testing],
-                ['Отсмотр прототипов',                      dw.fixed.includes('testingPrototypes')  ? skip : dwFix('testingPrototypes'),  assignees.testing],
-                ['Отсмотр дизайн-макетов',                  dw.fixed.includes('testingDesign')      ? skip : dwFix('testingDesign'),      assignees.testing],
-                ['Тестирование производительности',          dw.fixed.includes('testingPerformance') ? skip : dwFix('testingPerformance'), assignees.testing],
-                ['Тестирование с контентом',                 dw.fixed.includes('testingContent')     ? skip : dwFix('testingContent'),     assignees.testing],
-                ...(dwFix('contentTZ') > 0 ? [['Тестирование наполнения', 4, assignees.testing]] : []),
-                ...customT.map(w => [w.name, w.hours, assignees.testing]),
+            pushWorkSection('Тестирование', [
+                ['Тестирование главной и одной внутренней', ft2.test],
+                ['Тестирование внутренних страниц',         rt2.test],
+                ['Операционка',                             testingOps],
+                ['Тестирование на проде',                   testingProd],
+                ['Отсмотр артефактов',                      dwFix('testingArtifacts')],
+                ['Отсмотр прототипов',                      dwFix('testingPrototypes')],
+                ['Отсмотр дизайн-макетов',                  dwFix('testingDesign')],
+                ['Тестирование производительности',          dwFix('testingPerformance')],
+                ['Тестирование с контентом',                 dwFix('testingContent')],
+                ...(contentTZ > 0 ? [['Тестирование наполнения', 4]] : []),
+                ...customT.map(w=>[w.name, w.hours]),
             ]);
 
-            addSection('1.7', 'Контент', [
-                ['Наполнение контентом',               dw.fixed.includes('contentFill')        ? skip : dwFix('contentFill'),        assignees.content],
-                ['Инструкция для контент-менеджера',   dw.fixed.includes('contentInstruction') ? skip : dwFix('contentInstruction'), assignees.content],
-                ['Написание ТЗ',                       dw.fixed.includes('contentTZ')          ? skip : dwFix('contentTZ'),          assignees.content],
-                ...customC.map(w => [w.name, w.hours, assignees.content]),
-                ['Финальное согласование',             '00',                                                                          assignees.client],
+            pushWorkSection('Контент', [
+                ['Написание ТЗ для контента',             contentTZ],
+                ['Наполнение контентом',                  dwFix('contentFill')],
+                ['Инструкция для контент-менеджера',      dwFix('contentInstruction')],
+                ...customC.map(w=>[w.name, w.hours]),
             ]);
 
-            // Create workbook
+            // Интеграции
+            const intgItems = [
+                ...intgMap.filter(([,key])=>dwInt(key)).map(([name,,h])=>[name, h]),
+                ...customIntgItems,
+            ];
+            pushWorkSection('Интеграции', intgItems);
+
+            // ИТОГО РАБОТЫ
+            push([
+                'ИТОГО ПО РАБОТАМ', '', '', '', '', '', '', rnd(grandTotWorks), cost(grandTotWorks)
+            ], { bold:true, bg:'1E3A5F', color:'FFFFFF' });
+
+            empty(); empty();
+
+            // ═══════════════════════════════════════════════════════════════════
+            // РАЗДЕЛ 3 — ИТОГОВАЯ СВОДКА
+            // ═══════════════════════════════════════════════════════════════════
+            push(['РАЗДЕЛ 3 — ИТОГОВАЯ СВОДКА', '', '', '', '', '', '', '', ''], { bold:true, bg:'1E3A5F', color:'FFFFFF', span:[0,8] });
+            push(['Показатель', '', '', '', '', '', '', 'Часов', 'Стоимость, ₽'], { bold:true, bg:'2563EB', color:'FFFFFF' });
+
+            const totalBase = grandTotPg.analytics + grandTotPg.design + grandTotPg.frontend + grandTotPg.backend + grandTotPg.test + grandTotWorks;
+            const totalModified = totalBase * modifier + upsaleHours;
+            const modParts = [];
+            if (clientComplexity > 0) modParts.push(`Сложность клиента +${clientComplexity}%`);
+            if (internalGoals    > 0) modParts.push(`Внутренние цели +${internalGoals}%`);
+            if (mvp              > 0) modParts.push(`MVP +${mvp}%`);
+            if (upsaleHours      > 0) modParts.push(`Апсейл +${upsaleHours} ч`);
+
+            const summaryItems = [
+                ['Итого блоки по страницам', rnd(btSum), cost(btSum), 'FFFFFF'],
+                ['Итого работы', rnd(grandTotWorks), cost(grandTotWorks), 'FFFFFF'],
+                ['База (блоки + работы)', rnd(totalBase), cost(totalBase), 'DBEAFE'],
+                ...(modifier !== 1 || upsaleHours > 0
+                    ? [['Модификаторы: ' + (modParts.join(', ') || 'нет'), '', '', 'FFF7ED']]
+                    : []),
+                ['ИТОГО С МОДИФИКАТОРАМИ', rnd(totalModified), cost(totalModified), '1E3A5F'],
+            ];
+
+            summaryItems.forEach(([label, h, c, bg]) => {
+                const isTotal = label.startsWith('ИТОГО');
+                push([label, '', '', '', '', '', '', h !== '' ? h : '', c !== '' ? c : ''],
+                    { bold: isTotal, bg, color: isTotal ? 'FFFFFF' : '1E293B' });
+            });
+
+            // ── Сборка книги ─────────────────────────────────────────────────────
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(rows);
+
+            // Ширины столбцов
             ws['!cols'] = [
-                { wch: 10 },  // A - WBS
-                { wch: 50 },  // B - name
-                { wch: 18 },  // C - hours
-                { wch: 25 }   // D - assignee
+                { wch: 30 }, { wch: 38 }, { wch: 12 }, { wch: 12 },
+                { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 18 }
             ];
+
+            // Применяем стили
+            const hexFill = (hex) => ({ patternType:'solid', fgColor:{ rgb: hex } });
+            const hexFont = (hex, bold) => ({ bold: !!bold, color:{ rgb: hex }, name:'Calibri', sz:10 });
+
+            meta.forEach(({ row, bold, bg, color }) => {
+                const numCols = COLS;
+                for (let c = 0; c < numCols; c++) {
+                    const addr = XLSX.utils.encode_cell({ r: row, c });
+                    if (!ws[addr]) ws[addr] = { t:'z', v:'' };
+                    ws[addr].s = {
+                        fill: bg ? hexFill(bg) : undefined,
+                        font: hexFont(color || '1E293B', bold),
+                        alignment: { vertical:'center', wrapText: c < 2 },
+                        border: {
+                            bottom:{ style:'thin', color:{ rgb:'D1D5DB' } },
+                            right: { style:'thin', color:{ rgb:'D1D5DB' } }
+                        }
+                    };
+                }
+            });
+
+            // Числовой формат для колонок "часы" и "стоимость"
+            for (let r = 0; r < rows.length; r++) {
+                const hAddr = XLSX.utils.encode_cell({ r, c: 7 }); // Итого, ч
+                const cAddr = XLSX.utils.encode_cell({ r, c: 8 }); // Стоимость
+                if (ws[hAddr] && typeof ws[hAddr].v === 'number') ws[hAddr].z = '#,##0';
+                if (ws[cAddr] && typeof ws[cAddr].v === 'number') ws[cAddr].z = '#,##0 ₽';
+            }
+
             XLSX.utils.book_append_sheet(wb, ws, 'Оценка');
-            XLSX.writeFile(wb, `${projName}.xlsx`);
+            XLSX.writeFile(wb, `${projName}_оценка.xlsx`);
         }
 
         // ── GanttPRO XLSX Export ─────────────────────────────────────────────
