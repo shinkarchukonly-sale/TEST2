@@ -206,19 +206,21 @@
         }
 
         .page-header {
-            padding: 16px 20px;
+            padding: 12px 20px;
             background: #F8FAFC;
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
+            gap: 12px;
         }
 
         .page-title-wrapper {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             flex: 1;
+            min-width: 0;
         }
 
         .page-title-input {
@@ -230,7 +232,7 @@
             padding: 4px 8px;
             border-radius: 4px;
             flex: 1;
-            max-width: 400px;
+            min-width: 0;
         }
 
         .page-title-input:focus {
@@ -238,9 +240,38 @@
             box-shadow: 0 0 0 2px #3B82F6;
         }
 
+        .page-stats-pills {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .page-stat-pill {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .page-stat-pill.hours {
+            background: #EFF6FF;
+            color: #2563EB;
+        }
+
+        .page-stat-pill.cost {
+            background: #F0FDF4;
+            color: #16A34A;
+        }
+
         .page-actions {
             display: flex;
             gap: 8px;
+            flex-shrink: 0;
         }
 
         .chevron {
@@ -1453,90 +1484,6 @@
                 </div>
             </div>
 
-            <!-- Fixed works subtotal -->
-            <div class="summary-block" style="border-color:#C4B5FD;">
-                <div class="summary-title">ИТОГО: ФИКСИРОВАННЫЕ РАБОТЫ</div>
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <div class="summary-label">Аналитика</div>
-                        <div class="summary-value" id="fixedAnalytics">0</div>
-                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="fixedAnalyticsCost">0 ₽</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Дизайн</div>
-                        <div class="summary-value" id="fixedDesign">0</div>
-                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="fixedDesignCost">0 ₽</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Front-end</div>
-                        <div class="summary-value" id="fixedFrontend">0</div>
-                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="fixedFrontendCost">0 ₽</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Back-end</div>
-                        <div class="summary-value" id="fixedBackend">0</div>
-                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="fixedBackendCost">0 ₽</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Test</div>
-                        <div class="summary-value" id="fixedTest">0</div>
-                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="fixedTestCost">0 ₽</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Контент</div>
-                        <div class="summary-value" id="fixedContent">0</div>
-                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="fixedContentCost">0 ₽</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">ВСЕГО</div>
-                        <div class="summary-value" id="fixedTotal">0</div>
-                        <div style="font-size:11px;color:#8B5CF6;margin-top:2px;font-weight:600;" id="fixedTotalCost">0 ₽</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Total with works -->
-            <div class="summary-block">
-                <div class="summary-title">ИТОГО: ЧАСЫ С РАБОТАМИ</div>
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <div class="summary-label">Аналитика</div>
-                        <div class="summary-value" id="totalWithWorksAnalytics">0</div>
-                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalWithWorksAnalyticsCost">0 ₽</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Дизайн</div>
-                        <div class="summary-value" id="totalWithWorksDesign">0</div>
-                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalWithWorksDesignCost">0 ₽</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Front-end</div>
-                        <div class="summary-value" id="totalWithWorksFrontend">0</div>
-                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalWithWorksFrontendCost">0 ₽</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Back-end</div>
-                        <div class="summary-value" id="totalWithWorksBackend">0</div>
-                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalWithWorksBackendCost">0 ₽</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Test</div>
-                        <div class="summary-value" id="totalWithWorksTest">0</div>
-                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalWithWorksTestCost">0 ₽</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Контент</div>
-                        <div class="summary-value" id="totalWithWorksContent">0</div>
-                        <div style="font-size:11px;color:#94A3B8;margin-top:2px;" id="totalWithWorksContentCost">0 ₽</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">ВСЕГО</div>
-                        <div class="summary-value" id="totalWithWorksTotal">0</div>
-                        <div style="font-size:11px;color:#1E293B;margin-top:2px;font-weight:600;" id="totalWithWorksTotalCost">0 ₽</div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Modifiers Section (collapsible) -->
             <div class="collapsible-section" style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;margin-bottom:16px;">
                 <div class="collapsible-header" onclick="toggleCollapsible(this)" style="padding:16px 20px;">
@@ -2145,6 +2092,16 @@
                                 <svg class="chevron ${page.expanded ? 'expanded' : ''}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                                 <input type="text" class="page-title-input" value="${page.name}" onclick="event.stopPropagation()" onchange="updatePageName(${page.id}, this.value)">
                             </div>
+                            ${pageTotal.total > 0 ? `
+                            <div class="page-stats-pills" onclick="event.stopPropagation()">
+                                <span class="page-stat-pill hours">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    ${pageTotal.total.toFixed(0)} ч
+                                </span>
+                                <span class="page-stat-pill cost">
+                                    ${Math.round(pageTotal.total * ((parseFloat(document.getElementById('hourlyRate')?.value)) || 2500)).toLocaleString('ru-RU')} ₽
+                                </span>
+                            </div>` : ''}
                             <div class="page-actions" onclick="event.stopPropagation()">
                                 <button class="btn btn-primary" onclick="openBlockModal(${page.id})">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -5831,27 +5788,27 @@
 
         function confirmAssignCategory() {
             if (!_selectedCategoryId) { showError('Выберите категорию.'); return; }
+            // Сохраняем локально ДО вызова closeCategoryModal(),
+            // которая обнуляет _selectedCategoryId и _assigningToProjId
             const projId = _assigningToProjId;
-            // Восстанавливаем модал в исходный вид
+            const catId  = _selectedCategoryId;
             closeCategoryModal();
-            _restoreCategoryModal();
 
             const proj = projects.find(p => p.id === projId);
             if (!proj) return;
             if (!proj.snapshot) proj.snapshot = {};
-            proj.snapshot.categoryId = _selectedCategoryId;
+            proj.snapshot.categoryId = catId;
             sbFetch('PATCH', TABLE + '?id=eq.' + projId, {
                 snapshot: proj.snapshot,
                 updated_at: new Date().toISOString()
             }).then(() => {
                 if (projId === currentProjectId) {
-                    state.categoryId = _selectedCategoryId;
+                    state.categoryId = catId;
                     updateCurrentProjectLabel();
                 }
                 renderProjectsList();
-                showSuccess(`Категория «${getCategoryById(_selectedCategoryId)?.name}» назначена!`);
+                showSuccess(`Категория «${getCategoryById(catId)?.name}» назначена!`);
             }).catch(e => showError('Ошибка.', e.message));
-            _assigningToProjId = null;
         }
 
         function _restoreCategoryModal() {
