@@ -3055,7 +3055,11 @@
                 integrations: state.integrations,
                 customWorks: state.customWorks,
                 disabledWorks: state.disabledWorks,
-                integrationsData: state.integrationsData
+                integrationsData: state.integrationsData,
+                // Снимок библиотеки блоков на момент сохранения —
+                // гарантирует что в старых проектах блоки добавляются
+                // с теми же часами, что были при создании проекта
+                blocksLibrary: blocks
             }));
         }
 
@@ -3297,25 +3301,35 @@
                     }))
                 }));
             }
-            // Загружаем блоки категории проекта
             state.categoryId = s.categoryId || null;
-            if (state.categoryId) {
+
+            // ── Библиотека блоков: восстанавливаем снимок, сделанный на момент
+            // последнего сохранения проекта. Так при добавлении блоков в старый
+            // проект используются часы, актуальные на момент его создания, а не
+            // текущие значения из админки.
+            if (s.blocksLibrary) {
+                blocks = JSON.parse(JSON.stringify(s.blocksLibrary));
+            } else if (state.categoryId) {
+                // Старый проект без снимка библиотеки — берём текущую категорию
                 blocks = JSON.parse(JSON.stringify(getCategoryBlocks(state.categoryId)));
             }
-            if (s.percentages) Object.assign(state.percentages, s.percentages);
-            if (s.fixedValues) Object.assign(state.fixedValues, s.fixedValues);
+
+            // ── Работы: восстанавливаем строго из снимка проекта.
+            // Базой служат defaultPercentages / defaultFixedValues, а НЕ
+            // globalWorksSettings — чтобы изменения в админке не просачивались
+            // в уже сохранённые проекты.
+            state.percentages      = { ...JSON.parse(JSON.stringify(defaultPercentages)),  ...(s.percentages      || {}) };
+            state.fixedValues      = { ...JSON.parse(JSON.stringify(defaultFixedValues)),  ...(s.fixedValues      || {}) };
+            state.integrationsData = { ...JSON.parse(JSON.stringify(defaultIntegrations)), ...(s.integrationsData || {}) };
             if (s.integrations) Object.assign(state.integrations, s.integrations);
             if (s.customWorks) Object.keys(s.customWorks).forEach(k => {
                 if (Array.isArray(s.customWorks[k])) state.customWorks[k] = s.customWorks[k];
             });
-            if (s.disabledWorks) {
-                state.disabledWorks.percentages = s.disabledWorks.percentages || [];
-                state.disabledWorks.fixed = s.disabledWorks.fixed || [];
-                state.disabledWorks.integrations = s.disabledWorks.integrations || [];
-            } else {
-                state.disabledWorks = { percentages: [], fixed: [], integrations: [] };
-            }
-            if (s.integrationsData) Object.assign(state.integrationsData, s.integrationsData);
+            state.disabledWorks = {
+                percentages:  (s.disabledWorks?.percentages  || []),
+                fixed:        (s.disabledWorks?.fixed        || []),
+                integrations: (s.disabledWorks?.integrations || [])
+            };
             switchView('calculator');
             renderPages();
             renderFixedWorks();
@@ -5011,14 +5025,9 @@
                     });
                     showSuccess('Настройки работ сохранены глобально!');
                 }
-                // Если редактируем текущую категорию проекта — применяем только percentages/fixedValues, не disabledWorks
-                if (catId && catId === state.categoryId) {
-                    const savedDisabled = JSON.parse(JSON.stringify(state.disabledWorks));
-                    applyCategoryToState(catId);
-                    state.disabledWorks = savedDisabled; // восстанавливаем проектные удалённые работы
-                    renderFixedWorks();
-                    calculateTotals();
-                }
+                // Намеренно НЕ применяем новые настройки к открытому проекту:
+                // изменения в админке должны затрагивать только новые проекты,
+                // а не перетирать настройки работ уже существующих.
             } catch (e) {
                 showError('Ошибка сохранения настроек.', e.message);
             } finally {
