@@ -4142,15 +4142,15 @@
                         for (let i = sectionIdx + 1; i < tasks.length; i++) {
                             if (tasks[i].isSection) break;
                             total += tasks[i].hours || 0;
-                            if (approvalAfter.has(tasks[i].name)) total += 24;
+                            // Согласования — нулевые вехи, в сумму не добавляем
                         }
-                        rows.push({ wbs: String(s), name: t.name, hours: total, pred: '' });
+                        rows.push({ wbs: String(s), name: t.name, hours: '00', pred: '', isSection: true });
                     } else {
                         sub[s] = (sub[s] || 0) + 1;
                         rows.push({ wbs: `${s}.${sub[s]}`, name: t.name, hours: t.hours || 0, pred: '' });
                         if (approvalAfter.has(t.name)) {
                             sub[s]++;
-                            rows.push({ wbs: `${s}.${sub[s]}`, name: 'Согласование', hours: 24, pred: '' });
+                            rows.push({ wbs: `${s}.${sub[s]}`, name: 'Согласование', hours: '00', pred: '', isApproval: true });
                         }
                     }
                 });
@@ -4213,11 +4213,16 @@
                 const wsData = [];
                 rows.forEach(row => {
                     const sec = row.wbs.split('.')[0];
-                    const isSection = !row.wbs.includes('.');
-                    const assignee = isSection ? '' : (sectionAssignee[sec] || '');
+                    const isSection  = row.isSection;
+                    const isApproval = row.isApproval;
+                    const assignee = isSection   ? '' :
+                                     isApproval  ? 'Клиент' :
+                                     (sectionAssignee[sec] || '');
+                    const duration = (isSection || isApproval) ? '00' :
+                                     (row.hours > 0 ? row.hours : 1);
                     wsData.push([
                         row.name,
-                        isSection ? 0 : (row.hours > 0 ? row.hours : 1),
+                        duration,
                         row.wbs,
                         row.pred || '',
                         assignee
