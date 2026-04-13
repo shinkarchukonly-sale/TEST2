@@ -2563,53 +2563,50 @@
             // Analytics works — курирование и операционка от (блоки + фиксированные + кастомные)
             const analyticsFixedSum = dwFix('analyticsBenchmark') + dwFix('analyticsBrief') + dwFix('analyticsRequirements') + dwFix('analyticsStructure');
             const analyticsBaseForPct = blocksTotal.analytics + analyticsFixedSum + customA;
-            const analyticsCuration    = dwPct(analyticsBaseForPct, 'analyticsCuration');
-            const analyticsOperations  = dwPct(analyticsBaseForPct, 'analyticsOperations');
-            const analyticsPreparation = dwPct(blocksTotal.analytics + customA, 'analyticsPreparation');
+            const analyticsCuration    = Math.round(dwPct(analyticsBaseForPct, 'analyticsCuration'));
+            const analyticsOperations  = Math.round(dwPct(analyticsBaseForPct, 'analyticsOperations'));
+            const analyticsPreparation = Math.round(dwPct(blocksTotal.analytics + customA, 'analyticsPreparation'));
             // Итого: проценты + фикс + кастом (без двойного учёта)
             fixedWorks.analytics = analyticsCuration + analyticsOperations + analyticsPreparation + analyticsFixedSum + customA;
-            setText('analyticsCuration', analyticsCuration.toFixed(0));
-            setText('analyticsOperations', analyticsOperations.toFixed(0));
-            setText('analyticsPreparation', analyticsPreparation.toFixed(0));
+            setText('analyticsCuration', analyticsCuration);
+            setText('analyticsOperations', analyticsOperations);
+            setText('analyticsPreparation', analyticsPreparation);
 
             // Design works
             // designUIKit% и designSupervision удалены из UI — принудительно 0
-            const designUIKit      = 0;
-            const designUsedBlocks = dwPct(blocksTotal.design, 'designUsedBlocks');
+            const designUsedBlocks = Math.round(dwPct(blocksTotal.design, 'designUsedBlocks'));
             const designFixedSum   = dwFix('designAnimMain') + dwFix('designAnimInner') + dwFix('designAdaptAll') + dwFix('designUIKitMain');
             const designBase       = blocksTotal.design + designFixedSum + designUsedBlocks + customD;
-            const designOperations = dwPct(designBase, 'designOperations');
+            const designOperations = Math.round(dwPct(designBase, 'designOperations'));
             fixedWorks.design = designOperations + designFixedSum + designUsedBlocks + customD;
-            setText('designOperations', designOperations.toFixed(0));
+            setText('designOperations', designOperations);
             setText('designUIKit', '0');
-            setText('designUsedBlocks', designUsedBlocks.toFixed(0));
+            setText('designUsedBlocks', designUsedBlocks);
             setText('designSupervision', '0');
 
             // Frontend works
             // frontendBugs удалён из UI — принудительно 0
             const frontendFixedSum    = dwFix('frontendSetup') + dwFix('frontendPrototypes') + dwFix('frontendAnimMain') + dwFix('frontendAnimInner');
             const frontendBase        = blocksTotal.frontend + frontendFixedSum + customFE;
-            const frontendIntegration = dwPct(frontendBase, 'frontendIntegration');
+            const frontendIntegration = Math.round(dwPct(frontendBase, 'frontendIntegration'));
             const frontendBase2       = frontendBase + frontendIntegration;
-            const frontendOperations  = dwPct(frontendBase2, 'frontendOperations');
-            const frontendReview      = dwPct(frontendBase2, 'frontendReview');
-            const frontendBugs        = 0;
+            const frontendOperations  = Math.round(dwPct(frontendBase2, 'frontendOperations'));
+            const frontendReview      = Math.round(dwPct(frontendBase2, 'frontendReview'));
             fixedWorks.frontend = frontendFixedSum + frontendIntegration + frontendOperations + frontendReview + customFE;
-            setText('frontendOperations', frontendOperations.toFixed(0));
-            setText('frontendReview', frontendReview.toFixed(0));
+            setText('frontendOperations', frontendOperations);
+            setText('frontendReview', frontendReview);
             setText('frontendBugs', '0');
-            setText('frontendIntegration', frontendIntegration.toFixed(0));
+            setText('frontendIntegration', frontendIntegration);
 
             // Backend works
             // backendBugs удалён из UI — принудительно 0
             const backendFixedSum  = dwFix('backendSetup') + dwFix('backendMultilang') + dwFix('backendSearch') + dwFix('backendMultilangFront') + dwFix('backendSearchFront');
             const backendBase      = blocksTotal.backend + backendFixedSum + customBE;
-            const backendOperations = dwPct(backendBase, 'backendOperations');
-            const backendReview     = dwPct(backendBase, 'backendReview');
-            const backendBugs       = 0;
+            const backendOperations = Math.round(dwPct(backendBase, 'backendOperations'));
+            const backendReview     = Math.round(dwPct(backendBase, 'backendReview'));
             fixedWorks.backend  = backendFixedSum + backendOperations + backendReview + customBE;
-            setText('backendOperations', backendOperations.toFixed(0));
-            setText('backendReview', backendReview.toFixed(0));
+            setText('backendOperations', backendOperations);
+            setText('backendReview', backendReview);
             setText('backendBugs', '0');
 
             // Integrations — часы остаются только в секции интеграций
@@ -2636,11 +2633,11 @@
 
             // Testing works
             const testingBase       = blocksTotal.test + customT;
-            const testingOperations = dwPct(testingBase, 'testingOperations');
-            const testingProd       = dwPct(testingBase, 'testingProd');
+            const testingOperations = Math.round(dwPct(testingBase, 'testingOperations'));
+            const testingProd       = Math.round(dwPct(testingBase, 'testingProd'));
             fixedWorks.test = testingOperations + testingProd + dwFix('testingArtifacts') + dwFix('testingPerformance') + dwFix('testingContent') + customT;
-            setText('testingOperations', testingOperations.toFixed(0));
-            setText('testingProd', testingProd.toFixed(0));
+            setText('testingOperations', testingOperations);
+            setText('testingProd', testingProd);
 
             // Content works — всё остаётся в секции контента
             const contentTZ = dwFix('contentTZ');
