@@ -2573,42 +2573,44 @@
             setText('analyticsPreparation', analyticsPreparation.toFixed(0));
 
             // Design works
-            const designUIKit      = dwPct(blocksTotal.design, 'designUIKit');
+            // designUIKit% и designSupervision удалены из UI — принудительно 0
+            const designUIKit      = 0;
             const designUsedBlocks = dwPct(blocksTotal.design, 'designUsedBlocks');
             const designFixedSum   = dwFix('designAnimMain') + dwFix('designAnimInner') + dwFix('designAdaptAll') + dwFix('designUIKitMain');
-            const designBase       = blocksTotal.design + designFixedSum + designUIKit + designUsedBlocks + customD;
+            const designBase       = blocksTotal.design + designFixedSum + designUsedBlocks + customD;
             const designOperations = dwPct(designBase, 'designOperations');
-            const designSupervision = dwPct(designBase + designOperations, 'designSupervision');
-            fixedWorks.design = designOperations + designFixedSum + designUIKit + designUsedBlocks + customD;
+            fixedWorks.design = designOperations + designFixedSum + designUsedBlocks + customD;
             setText('designOperations', designOperations.toFixed(0));
-            setText('designUIKit', designUIKit.toFixed(0));
+            setText('designUIKit', '0');
             setText('designUsedBlocks', designUsedBlocks.toFixed(0));
-            setText('designSupervision', designSupervision.toFixed(0));
+            setText('designSupervision', '0');
 
             // Frontend works
+            // frontendBugs удалён из UI — принудительно 0
             const frontendFixedSum    = dwFix('frontendSetup') + dwFix('frontendPrototypes') + dwFix('frontendAnimMain') + dwFix('frontendAnimInner');
             const frontendBase        = blocksTotal.frontend + frontendFixedSum + customFE;
             const frontendIntegration = dwPct(frontendBase, 'frontendIntegration');
             const frontendBase2       = frontendBase + frontendIntegration;
             const frontendOperations  = dwPct(frontendBase2, 'frontendOperations');
             const frontendReview      = dwPct(frontendBase2, 'frontendReview');
-            const frontendBugs        = dwPct(frontendBase2, 'frontendBugs');
-            fixedWorks.frontend = frontendFixedSum + frontendIntegration + frontendOperations + frontendReview + frontendBugs + customFE;
+            const frontendBugs        = 0;
+            fixedWorks.frontend = frontendFixedSum + frontendIntegration + frontendOperations + frontendReview + customFE;
             setText('frontendOperations', frontendOperations.toFixed(0));
             setText('frontendReview', frontendReview.toFixed(0));
-            setText('frontendBugs', frontendBugs.toFixed(0));
+            setText('frontendBugs', '0');
             setText('frontendIntegration', frontendIntegration.toFixed(0));
 
             // Backend works
+            // backendBugs удалён из UI — принудительно 0
             const backendFixedSum  = dwFix('backendSetup') + dwFix('backendMultilang') + dwFix('backendSearch') + dwFix('backendMultilangFront') + dwFix('backendSearchFront');
             const backendBase      = blocksTotal.backend + backendFixedSum + customBE;
             const backendOperations = dwPct(backendBase, 'backendOperations');
             const backendReview     = dwPct(backendBase, 'backendReview');
-            const backendBugs       = dwPct(backendBase, 'backendBugs');
-            fixedWorks.backend  = backendFixedSum + backendOperations + backendReview + backendBugs + customBE;
+            const backendBugs       = 0;
+            fixedWorks.backend  = backendFixedSum + backendOperations + backendReview + customBE;
             setText('backendOperations', backendOperations.toFixed(0));
             setText('backendReview', backendReview.toFixed(0));
-            setText('backendBugs', backendBugs.toFixed(0));
+            setText('backendBugs', '0');
 
             // Integrations — часы остаются только в секции интеграций
             let intgHours = 0;
@@ -3016,28 +3018,26 @@
                 + f('analyticsBenchmark') + f('analyticsBrief') + f('analyticsRequirements') + f('analyticsStructure');
 
             const designFixedSum2 = f('designAnimMain') + f('designAnimInner') + f('designAdaptAll') + f('designUIKitMain');
-            const designUIKit2    = p(bt.d,'designUIKit');
             const designUsed2     = p(bt.d,'designUsedBlocks');
-            const designBase2     = bt.d + designFixedSum2 + designUIKit2 + designUsed2;
+            const designBase2     = bt.d + designFixedSum2 + designUsed2;
             const designOps2      = Math.round(designBase2 * (pct.designOperations||0) / 100);
-            const designSup2      = Math.round((designBase2 + designOps2) * (pct.designSupervision||0) / 100);
-            const designFix       = designOps2 + designFixedSum2 + designUIKit2 + designUsed2 + designSup2;
+            const designFix       = designOps2 + designFixedSum2 + designUsed2;
 
             const frontendFix = f('frontendSetup') + f('frontendPrototypes')
                 + p(bt.fe,'frontendOperations') + p(bt.fe,'frontendReview')
-                + p(bt.fe,'frontendBugs') + p(bt.fe,'frontendIntegration')
+                + p(bt.fe,'frontendIntegration')
                 + f('frontendAnimMain') + f('frontendAnimInner')
                 + f('backendMultilangFront') + f('backendSearchFront');
 
             const backendFix = f('backendSetup') + p(bt.be,'backendOperations')
-                + p(bt.be,'backendReview') + p(bt.be,'backendBugs')
+                + p(bt.be,'backendReview')
                 + f('backendMultilang') + f('backendSearch');
 
             const testFix = p(bt.t,'testingOperations') + p(bt.t,'testingProd')
-                + f('testingArtifacts') + f('testingPrototypes') + f('testingDesign')
+                + f('testingArtifacts')
                 + f('testingPerformance') + f('testingContent');
 
-            const contentFix = f('contentFill') + f('contentInstruction') + 8;
+            const contentFix = f('contentFill') + f('contentInstruction') + f('contentTZ');
 
             // Custom works
             let cwA=0, cwD=0, cwFE=0, cwBE=0, cwT=0, cwC=0;
@@ -3049,16 +3049,12 @@
             (cw.content||[]).forEach(w => cwC += w.hours||0);
             (cw.integrations||[]).forEach(w => cwBE += w.hours||0);
 
-            // Content TZ distributed
-            const tzExtra = f('contentTZ') > 0 ? 4 + 8 + 8 + 4 : 0;
-
-            const total = (bt.a + analyticsFix + cwA + 4)
+            const total = (bt.a + analyticsFix + cwA)
                         + (bt.d + designFix + cwD)
-                        + (bt.fe + frontendFix + cwFE + 8)
-                        + (bt.be + backendFix + cwBE + 8)
-                        + (bt.t + testFix + cwT + 4)
-                        + (contentFix + cwC)
-                        + f('contentTZ');
+                        + (bt.fe + frontendFix + cwFE)
+                        + (bt.be + backendFix + cwBE)
+                        + (bt.t + testFix + cwT)
+                        + (contentFix + cwC);
 
             return { hours: Math.round(total), pages: snapshot.pages.length, blocks: blockCount };
         }
@@ -3607,12 +3603,12 @@
             const analyticsOperations = dwPct(analyticsBaseForPct, 'analyticsOperations');
             const analyticsPrep       = dwPct(blocksTotal.analytics + customAH, 'analyticsPreparation');
 
-            const designUIKit      = dwPct(blocksTotal.design, 'designUIKit');
+            const designUIKit      = 0; // удалено из UI
             const designUsedBlocks = dwPct(blocksTotal.design, 'designUsedBlocks');
             const designFixedSum   = dwFix('designAnimMain') + dwFix('designAnimInner') + dwFix('designAdaptAll') + dwFix('designUIKitMain');
-            const designBase       = blocksTotal.design + designFixedSum + designUIKit + designUsedBlocks + customDH;
+            const designBase       = blocksTotal.design + designFixedSum + designUsedBlocks + customDH;
             const designOperations = dwPct(designBase, 'designOperations');
-            const designSupervision = dwPct(designBase + designOperations, 'designSupervision');
+            const designSupervision = 0; // удалено из UI
 
             const frontendFixedSum   = dwFix('frontendSetup') + dwFix('frontendPrototypes') + dwFix('frontendAnimMain') + dwFix('frontendAnimInner');
             const frontendBase       = blocksTotal.frontend + frontendFixedSum + customFEH;
@@ -3620,13 +3616,13 @@
             const frontendBase2      = frontendBase + frontendInteg;
             const frontendOps        = dwPct(frontendBase2, 'frontendOperations');
             const frontendReview     = dwPct(frontendBase2, 'frontendReview');
-            const frontendBugs       = dwPct(frontendBase2, 'frontendBugs');
+            const frontendBugs       = 0; // удалено из UI
 
             const backendFixedSum    = dwFix('backendSetup') + dwFix('backendMultilang') + dwFix('backendSearch') + dwFix('backendMultilangFront') + dwFix('backendSearchFront');
             const backendBase        = blocksTotal.backend + backendFixedSum + customBEH;
             const backendOps         = dwPct(backendBase, 'backendOperations');
             const backendReview      = dwPct(backendBase, 'backendReview');
-            const backendBugs        = dwPct(backendBase, 'backendBugs');
+            const backendBugs        = 0; // удалено из UI
 
             const testingBase     = blocksTotal.test + customTH;
             const testingOps      = dwPct(testingBase, 'testingOperations');
